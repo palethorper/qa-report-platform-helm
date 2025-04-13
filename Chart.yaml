@@ -1,0 +1,18 @@
+apiVersion: v2
+name: qa-report-platform
+description: Helm chart for report platform components
+type: application
+version: 0.0.1
+appVersion: 1.0.0
+dependencies:
+# - name: env-config
+#   repository: file://../../components/sl3-environment
+#   version: ">0.0.1"
+#   alias: environment-config
+- name: logstash
+  repository: "https://helm.elastic.co"
+  version: ">0.0.1"
+  # condition: vault.enabled
+- name: opensearch-dashboards
+  repository: https://opensearch-project.github.io/helm-charts
+  version: ">0.0.1"

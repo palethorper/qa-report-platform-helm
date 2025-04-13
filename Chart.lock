@@ -1,0 +1,9 @@
+dependencies:
+- name: logstash
+  repository: https://helm.elastic.co
+  version: 8.5.1
+- name: opensearch-dashboards
+  repository: https://opensearch-project.github.io/helm-charts
+  version: 2.28.0
+digest: sha256:abd8427966713bdd9cb9586e8f75a7a77bd1f43716fd5d08659195041ce84b81
+generated: "2025-04-13T22:09:28.5306841+10:00"
