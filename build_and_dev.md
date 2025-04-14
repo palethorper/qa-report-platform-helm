@@ -13,6 +13,10 @@ helm install --generate-name --dry-run --debug qa-report-platform
 
 # Test it out ... 
 
+$namespace='g0-dev'
+$release='np-dev1'
+
+
 <!-- export TESTNS=sl3-mci
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -21,7 +25,7 @@ metadata:
   name: ${TESTNS}
 EOF -->
 
-helm upgrade --dry-run --install np-dev1 . --namespace g0-dev --values values.yaml 
+helm upgrade --install np-dev1 --namespace g0-dev --values values.yaml 
 
 ## Some useful commands
 
