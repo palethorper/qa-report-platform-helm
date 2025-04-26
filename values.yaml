@@ -13,9 +13,9 @@ logstash:
       # override default, hardcoded, file in template.
     01_input_default.conf: |
       input {
-        beats {
-          port => 5044
-        }
+        # beats {
+        #   port => 5044
+        # }
 
         # tcp {
         # 	port => 50000
