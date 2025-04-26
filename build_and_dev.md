@@ -13,8 +13,8 @@ helm install --generate-name --dry-run --debug qa-report-platform
 
 # Test it out ... 
 
-$namespace='g0-dev'
-$release='np-dev1'
+$namespace='g0-dev2'
+$release='qarp1'
 
 
 <!-- export TESTNS=sl3-mci
@@ -25,7 +25,9 @@ metadata:
   name: ${TESTNS}
 EOF -->
 
-helm upgrade --install np-dev1 --namespace g0-dev --values values.yaml 
+helm install $release . -n $namespace --create-namespace -f values.yaml
+
+helm upgrade $release . -n $namespace -f values.yaml
 
 ## Some useful commands
 

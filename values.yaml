@@ -1,6 +1,7 @@
 
 # https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml
 logstash:
+  install: false
   persistence:
     enabled: false
   logstashConfig:
@@ -8,19 +9,213 @@ logstash:
      http:
        host: 0.0.0.0
   logstashPipeline:
-   logstash.conf: |
+    logstash.conf: |
+      # override default, hardcoded, file in template.
+    01_input_default.conf: |
       input {
         beats {
           port => 5044
         }
-      }
 
-      output {
-        stdout {
-          codec => rubydebug
-          # opensearch-cluster-master-0
+        # tcp {
+        # 	port => 50000
+        # }
+      }
+    01_input_file.conf: |
+      input {
+        # file {
+        # 	# tags => [ "debug" ] 
+
+        # 	path => "/usr/share/logstash/files/export*.xml"
+        # 	add_field => {
+        # 		"Product" => "Tosca"
+        # 		"CustCode" => "CSR"
+        # 		"Country" => "AU"
+        # 	}
+
+        # 	# TODO:
+        # 	# If is an EL entry - don't take
+        # 	codec => multiline {
+        # 		pattern => '^\s{2}\<\w+\>\w*$'
+        # 		# pattern => "<(TestCase|ExecutionList|ExecutionLogs|TestCaseLog|ActualLog)>" # AllEntries|All_TestCaseLogs|All_ExecutionLogs
+        # 		negate => "true"
+        # 		what => "previous"
+        # 		max_lines => 20000
+        # 	}
+
+        # 	type => "xml"
+        # 	start_position => "beginning"
+          # }
+
+        # http_poller {
+        # 	add_field => { 
+        # 		"product" => "healthcheck"
+        # 		"ccode" => "csr"
+        # 		"country_code" => "au"
+        # 	}
+        # 	urls => {
+        # 		consul_health_state => "http://${CONSUL_HEALTH_URL:localhost}:8500/v1/health/state/any"
+        # 	}
+
+        # 	codec => "json"
+        # 	schedule => { every => "60s" }
+        # }
+      }
+    02_filter_tosca.conf: |
+      filter {
+        if [Product] == "tosca" {
+
+          # Get rid of the header message in xml
+          if [message] =~ /xml version=/ { drop { } }
+            
+          xml {
+            source => "message"
+            store_xml => true
+            target => "_xml"
+            force_array => false
+            # max_lines => 5000
+          }
+
+          mutate {
+            add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }	
+            lowercase => [ "[@metadata][index_prefix]" ]
+            add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
+          }
+
+          ruby {
+            code => '
+              x = event.get("[@metadata][index_prefix]").downcase
+              event.set("[@metadata][index_prefix]",x)
+
+              y = event.get("_xml")
+
+              if !y.nil?
+                y.each {|k, v|
+                  v.gsub!(/^true$/i,"true") if !v.nil?
+                  v.gsub!(/^false$/i,"false") if !v.nil?
+                  event.set(k,v)
+                }
+              end
+
+              event.remove("_xml")
+              event.remove("message")
+            '
+          }
+
+          date {
+            match => ["[ModifiedAt]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
+            timezone => "Australia/Sydney"
+            target => "@timestamp"
+            remove_field => [ "ModifiedAt" ]
+          }
+
+          date {
+            match => ["[ModifiedAtDate]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
+            timezone => "Australia/Sydney"
+            target => "ModifiedAtDate"
+          }
+
+          date {
+            match => ["[CreatedAt]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
+            timezone => "Australia/Sydney"
+            target => "CreatedAt"
+          }
+
+          date {
+            match => ["[CreatedAtDate]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
+            timezone => "Australia/Sydney"
+            target => "CreatedAtDate"
+          }
+
+          mutate {
+            convert => { "UpdateRevision" => "integer" }
+            convert => { "Revision" => "integer" }
+
+            convert => { "HasMissingReferences" => "boolean" }
+            convert => { "IsTemplate" => "boolean" }
+            convert => { "Disabled" => "boolean" }
+            convert => { "IncludeForSynchronization" => "boolean" }
+            convert => { "IsBusinessTestCase" => "boolean" }
+            convert => { "ChangesAllowed" => "boolean" }
+            convert => { "IsCheckedOutByMe" => "boolean" }
+            
+            # ExecutionList
+            convert => { "NumberOfTestCases" => "integer" }
+            convert => { "NumberOfTestCasesFailed" => "integer" }
+            convert => { "NumberOfTestCasesPassed" => "integer" }
+            convert => { "NumberOfTestCasesNotExecuted" => "integer" }
+            convert => { "NumberOfTestCasesWithUnknownState" => "integer" }
+
+            convert => { "IsViewingAllowed" => "boolean" }
+            convert => { "IsOsvItem" => "boolean" }
+            convert => { "HasNotUniqueNamedSubparts" => "boolean" }
+            convert => { "OwningGroupInherited" => "boolean" }
+            convert => { "IncludeInAnalytics" => "boolean" }
+            convert => { "IsMandate" => "boolean" }
+            convert => { "HasMandates" => "boolean" }
+            convert => { "ContainsClassic" => "boolean" }
+            convert => { "IsBusinessExecutionList" => "boolean" }
+            convert => { "HasInconsistentParallelizationState" => "boolean" }
+            convert => { "IncludeForAccumulation" => "boolean" }
+            convert => { "IncludeForAccumulation" => "boolean" }
+
+            convert => { "ManualItems" => "integer" }
+            convert => { "AutomatedItems" => "integer" }
+
+            #TestCaseLog
+            convert => { "IsDeletedFromFileService" => "boolean" }
+            convert => { "RetainOnFileService" => "boolean" }
+            convert => { "Canceled" => "boolean" }
+            convert => { "Recovered" => "boolean" }
+
+            convert => { "Duration" => "float" }
+
+            # TODO: Only remove original event if NOT failed processing
+            remove_field => [ "[event][original]" ]
+          }
+
+          # Drop soem duplicates
+          # if [ObjectType] == 'TestCase' and [UpdateRevision] == ''  { drop { } }
+
+          kv {
+            source => "TCProperties"
+            target => "[Properties]"
+            include_brackets => false
+            field_split => ' '
+            trim_key => " "
+            remove_field => [ "TCProperties" ]
+          }
+
+          ruby {
+            code => '
+              t = Time.at(event.get("@timestamp").to_f)
+              suffix = t.strftime("%Y%d%H%M%S")
+
+              event.set("[@metadata][index_suffix]", suffix)
+            '
+          }
+
         }
       }
+
+  03_output_tosca.conf: |
+    output {
+
+      if "debug" in [tags] {
+        stdout { codec  => rubydebug { metadata => true } }
+      } else {
+        elasticsearch {
+          hosts => "elasticsearch:9200"
+          codec => json
+          index => "%{[@metadata][index_prefix]}"	# TODO: Add date (month\year) suffix to filter
+          user => "elastic" # sort out auth!!
+          password => "${LOGSTASH_INTERNAL_PASSWORD}"
+      
+          # Specific for Tricentis - as setting the docuemnt id based on the UUID + revisison
+          document_id => "%{UniqueId}-%{[@metadata][index_suffix]}"
+        }
+      }
+    }
 
   extraPorts:
     - name: test-results
@@ -36,13 +231,38 @@ logstash:
         protocol: TCP
         targetPort: 5044
 
+## @param opensearch External OpenSearch Helm Chart as dependency
+## Set @param opensearch.install to `false` if using a Cloud/On-Premise managed OpenSearch
+##
+opensearch:
+  install: true
+  ## @param opensearch.singleNode If "true", replicas will be forced from 3 to 1
+  ##
+  singleNode: true
+  ## @param opensearch.httpPort Port for OpenSearch endpoint
+  ##
+
+  resources:
+    requests:
+      cpu: "150m"
+      memory: "100Mi"
+
+  startupProbe:
+    initialDelaySeconds: 30
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+    - name: DISABLE_SECURITY_PLUGIN
+      value: "true"
+
 opensearch-dashboards:
   opensearchHosts: "http://opensearch-cluster-master:9200"
-  image:
-    tag: "2.18.0"
+  # image:
+  #   tag: "2.18.0"
   extraEnvs:
   - name: "DISABLE_SECURITY_PLUGIN"
     value: "true"
+
   config:
     opensearch_dashboards.yml: |
       # opensearch_security.multitenancy.enabled: true
@@ -54,22 +274,23 @@ opensearch-dashboards:
 
       # Default OpenSearch Dashboards configuration from docker image of Dashboards
       opensearch_security.enabled: false
-
-  # ingress:
-  #   enabled: true
-  #   ingressClassName: nginx
-  #   annotations:
-  #     kubernetes.io/ingress.class: "nginx"
-  #   hosts:
-  #     - host: rp-dev1.palethorpe.biz
-  #       paths:
-  #         - path: /xx
-  #           backend:
-  #             serviceName: ""
-  #             servicePort: ""
-  #   tls:
-  #   - secretName: rp-dev1-tls
-  #     hosts:
-  #       - rp-dev1.palethorpe.biz
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/whitelist-source-range: "163.47.122.50"
+      cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    hosts:
+      - host: osd-dev1.palethorpe.biz
+        paths:
+          - path: /
+            backend:
+              serviceName: ""
+              servicePort: ""
+    tls:
+    - secretName: osd-dev1
+      hosts:
+        - osd-dev1.palethorpe.biz
 
   
