@@ -1,0 +1,60 @@
+{
+    "order": 0,
+    "index_patterns": [
+        "tosca-*"
+    ],
+    "settings": {
+        "index": {
+            "number_of_replicas": "1",
+            "refresh_interval": "5s"
+        }
+    },
+    "mappings": {
+        "numeric_detection": true,
+        "dynamic": true,
+        "dynamic_templates": [
+            {
+                "strings": {
+                    "mapping": {
+                        "ignore_above": 512,
+                        "type": "keyword"
+                    },
+                    "match_mapping_type": "string"
+                }
+            }
+        ],
+        "date_detection": true,
+        "properties": {
+            "LogInfo": {
+                "type": "text"
+            },
+            "AggregatedDescription": {
+                "type": "text"
+            },
+            "Description": {
+                "type": "text"
+            },
+            "Name": {
+                "type": "keyword"
+            },
+            
+            "@timestamp": {
+                "type": "date"
+            },
+            "index_prefix": {
+                "type": "keyword"
+            },
+            "ParentSurrogateNum": {
+                "type": "keyword"
+            },
+            "UniqueId": {
+                "type": "keyword"
+            },
+
+            "tags": {
+                "type": "keyword"
+            }
+        }
+    },
+    "aliases": {}
+}
