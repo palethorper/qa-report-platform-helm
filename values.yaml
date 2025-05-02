@@ -279,7 +279,7 @@ opensearch-dashboards:
     ingressClassName: nginx
     annotations:
       kubernetes.io/ingress.class: "nginx"
-      nginx.ingress.kubernetes.io/whitelist-source-range: "163.47.122.21,159.196.170.110"
+      nginx.ingress.kubernetes.io/whitelist-source-range: "163.47.122.31,159.196.170.110"
       cert-manager.io/cluster-issuer: "letsencrypt-staging"
     hosts:
       - host: osd-dev1.palethorpe.biz

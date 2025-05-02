@@ -50,7 +50,13 @@
             "UniqueId": {
                 "type": "keyword"
             },
-
+            "ExecutionListUniqueId": {
+                "type": "keyword"
+            },
+            "TestCaseUniqueId": {
+                "type": "keyword"
+            },
+            
             "tags": {
                 "type": "keyword"
             }
