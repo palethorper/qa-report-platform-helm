@@ -2,7 +2,13 @@
 # https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml
 #TODO: Add opensearch output plugin!!
 logstash:
-  install: false
+  install: true
+
+  image: "registry.digitalocean.com/g0-cr/logstash-opensearch"
+  imageTag: "latest"
+  imagePullSecrets:
+    - name: g0-cr
+
   persistence:
     enabled: false
   logstashConfig:
@@ -14,25 +20,27 @@ logstash:
       # override default, hardcoded, file in template.
     01_input_default.conf: |
       input {
-        beats {
-          port => 5044
-        }
-
-        # tcp {
-        # 	port => 50000
+        # beats {
+        #   port => 5044
         # }
+
+        tcp {
+        	port => 50000
+          codec => "json"
+        	add_field => {
+        		"Product" => "Tosca"
+        		"CustCode" => "CSR"
+        		"Country" => "AU"
+        	}
+        }
       }
-    01_input_file.conf: |
+
+    01_input_file-tosca-xml.conf: |
       input {
         # file {
         # 	# tags => [ "debug" ] 
 
         # 	path => "/usr/share/logstash/files/export*.xml"
-        # 	add_field => {
-        # 		"Product" => "Tosca"
-        # 		"CustCode" => "CSR"
-        # 		"Country" => "AU"
-        # 	}
 
         # 	# TODO:
         # 	# If is an EL entry - don't take
@@ -64,23 +72,24 @@ logstash:
       }
     02_filter_tosca.conf: |
       filter {
-        if [Product] == "tosca" {
+        if [Product] == "Tosca" and ![AddedToListDate] {
 
           # Get rid of the header message in xml
           if [message] =~ /xml version=/ { drop { } }
-            
-          xml {
-            source => "message"
-            store_xml => true
-            target => "_xml"
-            force_array => false
-            # max_lines => 5000
-          }
+
+
+          # xml {
+          # 	source => "message"
+          # 	store_xml => true
+          # 	target => "_xml"
+          # 	force_array => false
+          # 	# max_lines => 5000
+          # }
 
           mutate {
-            add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }	
+            add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }
             lowercase => [ "[@metadata][index_prefix]" ]
-            add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
+            # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
           }
 
           ruby {
@@ -103,32 +112,69 @@ logstash:
             '
           }
 
+          # Workaround for value of 'unknown'
+          if [CreatedAt] == "Unknown" {
+            mutate {
+              update => { "CreatedAt" => "%{ModifiedAt}" }
+            }
+          }
+
           date {
-            match => ["[ModifiedAt]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
-            timezone => "Australia/Sydney"
+            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
             target => "@timestamp"
-            remove_field => [ "ModifiedAt" ]
+            # remove_field => [ "ModifiedAt" ]
+            tag_on_failure => ["_dateparsefailure_ModifiedAt"]
           }
 
           date {
-            match => ["[ModifiedAtDate]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
-            timezone => "Australia/Sydney"
+            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
+            target => "ModifiedAt"
+            # remove_field => [ "ModifiedAt" ]
+            tag_on_failure => ["_dateparsefailure_ModifiedAt"]
+          }
+
+          date {
+            match => ["[ModifiedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
             target => "ModifiedAtDate"
+            tag_on_failure => ["_dateparsefailure_ModifiedAtDate"]
           }
 
           date {
-            match => ["[CreatedAt]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
-            timezone => "Australia/Sydney"
+            match => ["[CreatedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
             target => "CreatedAt"
+            tag_on_failure => ["_dateparsefailure_CreatedAt"]
           }
 
           date {
-            match => ["[CreatedAtDate]","MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a"]
-            timezone => "Australia/Sydney"
+            match => ["[CreatedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
             target => "CreatedAtDate"
+            tag_on_failure => ["_dateparsefailure_CreatedAtDate"]
           }
+
+          # Set Execution list evetime time to StartTime
+          date {
+            match => ["[StartTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
+            target => "StartTime"
+            tag_on_failure => ["_dateparsefailure_StartTime"]
+          }
+
+          date {
+            match => ["[EndTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # timezone => "Australia/Sydney"
+            target => "EndTime"
+            tag_on_failure => ["_dateparsefailure_EndTime"]
+          }
+
 
           mutate {
+            gsub => [ "NodePath", "^\s*", "", "message", "\s*$", ""]
+
             convert => { "UpdateRevision" => "integer" }
             convert => { "Revision" => "integer" }
 
@@ -139,7 +185,7 @@ logstash:
             convert => { "IsBusinessTestCase" => "boolean" }
             convert => { "ChangesAllowed" => "boolean" }
             convert => { "IsCheckedOutByMe" => "boolean" }
-            
+
             # ExecutionList
             convert => { "NumberOfTestCases" => "integer" }
             convert => { "NumberOfTestCasesFailed" => "integer" }
@@ -172,7 +218,8 @@ logstash:
             convert => { "Duration" => "float" }
 
             # TODO: Only remove original event if NOT failed processing
-            remove_field => [ "[event][original]" ]
+            remove_field => [ "[event][original]", "[$id]" ]
+            # remove_field => [ "[log][file]][path]" ]
           }
 
           # Drop soem duplicates
@@ -187,40 +234,83 @@ logstash:
             remove_field => [ "TCProperties" ]
           }
 
+          ruby  {
+            code => '
+              
+              # begin 
+
+              r = event.get("[NodePath]")
+              if (r.to_s.scan("/").count > 0 && r !=nil )
+                paths = r.split("/").reject {|s| s.empty? }
+
+                t = paths.delete_if { |component| component.empty? }
+                event.set("[ComponentFolders]", t) 
+
+              end
+
+              # rescue
+              # end
+            '}
+
           ruby {
             code => '
               t = Time.at(event.get("@timestamp").to_f)
               suffix = t.strftime("%Y%d%H%M%S")
+              event.set("[@metadata][id_suffix]", suffix)
 
-              event.set("[@metadata][index_suffix]", suffix)
+              suffix = t.strftime("%Y")
+              event.set("[@metadata][index_suffix]", "-" + suffix)
+
             '
+          }
+
+          mutate {
+            update => { "_id" => "%{UniqueId}-%{[@metadata][id_suffix]}" }
           }
 
         }
       }
 
-  03_output_tosca.conf: |
-    output {
+    03_output_tosca.conf: |
+      output {
 
-      if "debug" in [tags] {
-        stdout { codec  => rubydebug { metadata => true } }
-      } else {
-        elasticsearch {
-          hosts => "elasticsearch:9200"
-          codec => json
-          index => "%{[@metadata][index_prefix]}"	# TODO: Add date (month\year) suffix to filter
-          user => "elastic" # sort out auth!!
-          password => "${LOGSTASH_INTERNAL_PASSWORD}"
-      
-          # Specific for Tricentis - as setting the docuemnt id based on the UUID + revisison
-          document_id => "%{UniqueId}-%{[@metadata][index_suffix]}"
+        if "debug" in [tags] {
+          stdout { codec  => rubydebug { metadata => true } }
+        } else {
+          # elasticsearch {
+          # 	hosts => "host.docker.internal:9200"
+          # 	codec => json
+          # 	index => "%{[@metadata][index_prefix]}"	# TODO: Add date (month\year) suffix to filter
+          # 	# user => "elastic" # sort out auth!!
+          # 	# password => "${LOGSTASH_INTERNAL_PASSWORD}"
+        
+          # 	# Specific for Tricentis - as setting the docuemnt id based on the UUID + revisison
+          # 	document_id => "%{UniqueId}-%{[@metadata][index_suffix]}"
+          # }
+
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "Test@Password01"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            # action => "create"
+
+            document_id => "%{UniqueId}-%{[@metadata][id_suffix]}"
+          }
+
         }
       }
-    }
+
 
   extraPorts:
     - name: test-results
-      containerPort: 5044
+      containerPort: 50000
 
   service:
     # annotations: {}
@@ -228,9 +318,9 @@ logstash:
     # loadBalancerIP: ""
     ports:
       - name: test-results
-        port: 5044
+        port: 50000
         protocol: TCP
-        targetPort: 5044
+        targetPort: 50000
 
 opensearch:
   install: true
