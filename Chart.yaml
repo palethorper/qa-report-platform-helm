@@ -4,6 +4,18 @@ description: Helm chart for report platform components
 type: application
 version: 0.0.1
 appVersion: 1.0.0
+keywords:
+  - test results reporting service
+  - test report dashboard
+  - test automation reporting tools
+  - test automation results dashboard
+  - qa automation dashboard
+  - qa metrics dashboard
+  - automation test report
+  - test analytics
+  - test insights
+  - test execution dashboard
+home: https://groundzero.solutions
 icon: https://groundzero.solutions
 dependencies:
 - name: logstash
@@ -17,3 +29,7 @@ dependencies:
   version: ">0.0.1"
   repository: https://opensearch-project.github.io/helm-charts/
   condition: opensearch.install
+- name: rabbitmq
+  version: ">0.0.1"
+  repository: https://charts.bitnami.com/bitnami
+  condition: rabbitmq.install

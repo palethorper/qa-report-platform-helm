@@ -13,21 +13,25 @@ helm install --generate-name --dry-run --debug qa-report-platform
 
 # Test it out ... 
 
-$namespace='g0-dev2'
-$release='qarp1'
+```powershell
+$namespace='g0-auth-enabled'
+$release='qarp-2'
+$ospassword='Test@Password01' # Sample password for testing - do not use this  for prod deploys 
 
-
-<!-- export TESTNS=sl3-mci
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${TESTNS}
-EOF -->
+kubectl create namespace $namespace
+kubectl create secret generic -n $namespace platform-creds --from-literal=opensearch-admin-password=$ospassword
 
 helm install $release . -n $namespace --create-namespace -f values.yaml
 
-helm upgrade $release . -n $namespace -f values.yaml
+helm upgrade --install --create-namespace $release . -n $namespace -f values.yaml
+
+helm uninstall $release -n $namespace 
+
+
+
+curl -k -vvv https://localhost:9200/ -u 'admin:Test@Password01'
+
+```
 
 ## Some useful commands
 

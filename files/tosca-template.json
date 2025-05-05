@@ -1,3 +1,4 @@
+// POST _template/tosca-template
 {
     "order": 0,
     "index_patterns": [
