@@ -20,21 +20,16 @@ logstash:
       # override default, hardcoded, file in template.
     01_input_default.conf: |
       input {
-        # beats {
-        #   port => 5044
-        # }
-
-        tcp {
-        	port => 50000
-          codec => "json"
-        	add_field => {
-        		"Product" => "Tosca"
-        		"CustCode" => "CSR"
-        		"Country" => "AU"
-        	}
+        beats {
+          port => 5044
+          # Some of these moved to filebeat side - Product \ format of message
+          # add_field => {
+          # 	"Product" => "Tosca"
+          # 	"CustCode" => "G001"
+          # 	"Country" => "AU"
+          # }
         }
       }
-
     01_input_file-tosca-xml.conf: |
       input {
         # file {
@@ -90,6 +85,7 @@ logstash:
             add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }
             lowercase => [ "[@metadata][index_prefix]" ]
             # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
+            add_field => { "_eventtime"=> "%{@timestamp}" }
           }
 
           ruby {
@@ -255,10 +251,10 @@ logstash:
           ruby {
             code => '
               t = Time.at(event.get("@timestamp").to_f)
-              suffix = t.strftime("%Y%d%H%M%S")
+              suffix = t.strftime("%Y%m%d%H%M%S")
               event.set("[@metadata][id_suffix]", suffix)
 
-              suffix = t.strftime("%Y")
+              suffix = t.strftime("%Y-%m")
               event.set("[@metadata][index_suffix]", "-" + suffix)
 
             '
@@ -307,20 +303,33 @@ logstash:
         }
       }
 
-
   extraPorts:
     - name: test-results
-      containerPort: 50000
+      containerPort: 5044
+
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    className: "nginx"
+    pathtype: ImplementationSpecific
+    hosts:
+      - host: g0-auth.palethorpe.biz
+        paths:
+          - path: /msg
+            servicePort: 5044
+    tls:
+     - secretName: g0-auth
+
 
   service:
-    # annotations: {}
     type: ClusterIP
-    # loadBalancerIP: ""
     ports:
       - name: test-results
-        port: 50000
+        port: 5044
         protocol: TCP
-        targetPort: 50000
+        targetPort: 5044
 
 opensearch:
   install: true
@@ -375,7 +384,9 @@ opensearch:
     size: 1Gi
 
 opensearch-dashboards:
-  opensearchHosts: "https://opensearch-cluster-master:9200"
+  # opensearchHosts: "https://opensearch-cluster-master:9200"
+  replicaCount: 2
+
   # image:
   #   tag: "2.18.0"
   # extraEnvs:
@@ -403,6 +414,48 @@ opensearch-dashboards:
       # opensearch:
       #     certificateAuthorities: /usr/share/opensearch-dashboards/certs/dashboards-root-ca.pem
       #     if utilizing custom CA certs for connection to opensearch, provide the CA here
+
+
+      # https://github.com/opensearch-project/OpenSearch-Dashboards/blob/main/config/opensearch_dashboards.yml
+
+      # application_config.enabled: true
+      opensearchDashboards.defaultAppId: "discover"
+      home.disableWelcomeScreen: true
+
+      # Optional setting that controls the permissions of data source to create, update and delete.
+      # "none": The data source is readonly for all users.
+      # "dashboard_admin": The data source can only be managed by dashboard admin.
+      # "all": The data source can be managed by all users. Default to "all".
+      # data_source_management.manageableBy: "dashboard_admin"
+
+      # Set the value of this setting to false to hide the help menu link to the OpenSearch Dashboards user survey
+      # opensearchDashboards.survey.url: "false"
+
+      # @experimental Set the value of this setting to display navigation updates, including dev tool top right navigation
+      # opensearchDashboards.futureNavigation: false
+
+      # Set the value to true to enable workspace feature
+      # Please note, workspace will not work with multi-tenancy. To enable workspace feature, you need to disable multi-tenancy first with `opensearch_security.multitenancy.enabled: false`
+      # Please uncomment below uiSettings to enable new home/navigation experience when workspace is enabled
+      # opensearch_security.multitenancy.enabled: false
+      workspace.enabled: false
+      # uiSettings:
+      #   overrides:
+      #     "home:useNewHomePage": true
+
+      # Set the value to true to enable Ui Metric Collectors in Usage Collector
+      # This publishes the Application Usage and UI Metrics into the saved object, which can be accessed by /api/stats?extended=true&legacy=true&exclude_usage=false
+      usageCollection.uiMetric.enabled: false
+
+      # Set the value to true to enable dynamic config service to obtain configs from a config store. By default, it's disabled
+      # dynamic_config_service.enabled: false
+
+      # Set the value to true to enable direct data import from a file
+      # data_importer.enabled: true
+      # Not working on 2.19.x - what version
+
+      # assistant.chat.enabled: true
+
     
   ingress:
     enabled: true
@@ -452,7 +505,7 @@ rabbitmq:
     create: true
 
   service:
-    managerPortEnabled: false
+    managerPortEnabled: true
 
   resources:
     limits:
@@ -465,17 +518,20 @@ rabbitmq:
 
 
   ingress:
-    enabled: false
+    enabled: true
     ingressClassName: nginx
-    hostname: g0-auth-os.palethorpe.biz
+    hostname: g0-auth.palethorpe.biz
+    existingSecret: g0-cr
     tls: true
-    # path: /*
+    path: /ampq
     # extraPaths:
-    #   - path: /mq/*
-    #     pathType: ImplementationSpecific
-    #     backendName: 
-    #       serviceName: qarp-2-rabbitmq
-    #       servicePort: amqp
+    # - path: /mqadmin
+    #   pathType: Prefix
+    #   backend:
+    #     service:
+    #       name: qarp-2-rabbitmq
+    #       port:
+    #         name: http-stats
     annotations:
       kubernetes.io/ingress.class: "nginx"
-      cert-manager.io/cluster-issuer: "letsencrypt-staging"
+      # cert-manager.io/cluster-issuer: "letsencrypt-staging"
