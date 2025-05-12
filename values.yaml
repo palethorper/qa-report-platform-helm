@@ -4,6 +4,7 @@
 
 global:
   msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
+  ip-whitelist-intneral: &ipwhiteliststring "163.47.122.31,159.196.170.110"
 
 logstash:
   install: true
@@ -26,12 +27,6 @@ logstash:
       input {
         beats {
           port => 5044
-          # Some of these moved to filebeat side - Product \ format of message
-          # add_field => {
-          # 	"Product" => "Tosca"
-          # 	"CustCode" => "G001"
-          # 	"Country" => "AU"
-          # }
         }
       }
     01_input_file-tosca-xml.conf: |
@@ -89,7 +84,7 @@ logstash:
             add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }
             lowercase => [ "[@metadata][index_prefix]" ]
             # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
-            add_field => { "_eventtime"=> "%{@timestamp}" }
+            add_field => { "eventtime"=> "%{@timestamp}" }
           }
 
           ruby {
@@ -106,6 +101,9 @@ logstash:
                   event.set(k,v)
                 }
               end
+
+              # Keep metadata
+              event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
 
               event.remove("_xml")
               event.remove("message")
@@ -160,8 +158,15 @@ logstash:
           date {
             match => ["[StartTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
             # timezone => "Australia/Sydney"
-            target => "StartTime"
+            target => "@timestamp"
             tag_on_failure => ["_dateparsefailure_StartTime"]
+          }
+
+          # Set the StartTime time to be the eventime
+          if [ObjectType] == "ExecutionTestCaseLog" and [StartTime] {
+            mutate {
+              update => { "StartTime" => "%{@timestamp}" }
+            }
           }
 
           date {
@@ -321,7 +326,7 @@ logstash:
 
 
   ingress:
-    enabled: false
+    enabled: true
     annotations:
       kubernetes.io/ingress.class: "nginx"
       # cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -330,19 +335,19 @@ logstash:
     hosts:
       - host: g0-auth.palethorpe.biz
         paths:
-          - path: /msg
+          - path: /ls
             servicePort: 5044
     tls:
      - secretName: g0-auth
 
 
-  service:
-    type: ClusterIP
-    ports:
-      - name: test-results
-        port: 5044
-        protocol: TCP
-        targetPort: 5044
+  # service:
+  #   type: ClusterIP
+  #   ports:
+  #     - name: test-results
+  #       port: 5044
+  #       protocol: TCP
+  #       targetPort: 5044
 
 opensearch:
   install: true
@@ -475,7 +480,7 @@ opensearch-dashboards:
     ingressClassName: nginx
     annotations:
       kubernetes.io/ingress.class: "nginx"
-      # nginx.ingress.kubernetes.io/whitelist-source-range: "163.47.122.20,159.196.170.110"
+      nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     hosts:
       - host: g0-auth.palethorpe.biz
@@ -548,6 +553,7 @@ rabbitmq:
     annotations:
       kubernetes.io/ingress.class: "nginx"
       # cert-manager.io/cluster-issuer: "letsencrypt-staging"
+      nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
 
 kafka:
   install: true
