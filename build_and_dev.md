@@ -12,6 +12,33 @@ helm install --generate-name --dry-run --debug qa-report-platform
 
 
 # Test it out ... 
+```sh
+
+export VALUES="${VALUES:-values.yaml}"
+export RELEASE="${RELEASE:-qarp-2}"
+export NAMESPACE="${NAMESPACE:-g0-auth-enabled}"
+export INSTALL_FROM="${INSTALL_FROM:-.}"
+
+export MBPASS='P@ssw0rd11!!'
+
+kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MBPASS} --from-literal=inter-broker-password=${MBPASS} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MBPASS} --from-literal=controller-client-secret=${MBPASS}
+
+
+helm install \
+    --create-namespace \
+    ${RELEASE} ${INSTALL_FROM} \
+    --namespace ${NAMESPACE} \
+    -f ${VALUES} \
+    $@
+
+helm upgrade \
+    --create-namespace \
+    --install ${RELEASE} ${INSTALL_FROM} \
+    --namespace ${NAMESPACE} \
+    -f ${VALUES} \
+    $@
+
+```
 
 ```powershell
 $namespace='g0-auth-enabled'

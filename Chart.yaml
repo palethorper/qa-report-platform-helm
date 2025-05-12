@@ -33,3 +33,7 @@ dependencies:
   version: ">0.0.1"
   repository: https://charts.bitnami.com/bitnami
   condition: rabbitmq.install
+- name: kafka
+  version: ">0.0.1"
+  repository: https://charts.bitnami.com/bitnami
+  condition: kafka.install

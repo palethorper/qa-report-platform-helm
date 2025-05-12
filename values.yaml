@@ -1,6 +1,10 @@
 
 # https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml
 #TODO: Add opensearch output plugin!!
+
+global:
+  msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
+
 logstash:
   install: true
 
@@ -307,8 +311,17 @@ logstash:
     - name: test-results
       containerPort: 5044
 
+  # resources:
+  #   requests:
+  #     cpu: "100m"
+  #     memory: "300Mi"
+  #   limits:
+  #     cpu: "500m"
+  #     memory: "900Mi"
+
+
   ingress:
-    enabled: true
+    enabled: false
     annotations:
       kubernetes.io/ingress.class: "nginx"
       # cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -385,7 +398,7 @@ opensearch:
 
 opensearch-dashboards:
   # opensearchHosts: "https://opensearch-cluster-master:9200"
-  replicaCount: 2
+  replicaCount: 1
 
   # image:
   #   tag: "2.18.0"
@@ -477,7 +490,7 @@ opensearch-dashboards:
         - g0-auth.palethorpe.biz
 
 rabbitmq:
-  install: true
+  install: false
   image:
     repository: bitnami/rabbitmq
   auth:
@@ -535,3 +548,32 @@ rabbitmq:
     annotations:
       kubernetes.io/ingress.class: "nginx"
       # cert-manager.io/cluster-issuer: "letsencrypt-staging"
+
+kafka:
+  install: true
+  
+  clusterId: "kafka-cluster"
+  replicaCount: 1
+
+  sasl:
+    existingSecret: message-broker-secret
+
+  # sasl.client.users[0]: user1
+  # sasl.client.passwords[0]: *msgbrokerPassword
+
+  # # sasl.interbroker.user[0]: inter_broker_user
+  # sasl.interbroker.password: *msgbrokerPassword
+
+  # # sasl.controller.user[0]: inter_broker_user
+  # sasl.controller.password: *msgbrokerPassword
+
+  controller:
+    replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 5Gi
+    requests:
+      cpu: 100m
+      memory: 200Mi
