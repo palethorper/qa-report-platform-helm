@@ -5,14 +5,14 @@
 global:
   msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
   ip-whitelist-intneral: &ipwhiteliststring "0.0.0.0/0"
+  hostname: &hostname "test.local"
+  ospassword: &ospassword "Gr0un40Test!!"
 
 logstash:
   install: true
 
-  image: "registry.digitalocean.com/g0-cr/logstash-opensearch"
-  imageTag: "latest"
-  imagePullSecrets:
-    - name: g0-cr
+  image: docker-elk-logstash
+  imageTag: latest
 
   persistence:
     enabled: false
@@ -301,7 +301,7 @@ logstash:
             index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
 
             user => "admin"
-            password => "Test@Password01"
+            password => "Gr0un40Test!!" #TODO: Requires update
             ssl => true
             ssl_certificate_verification => false
             
@@ -334,21 +334,21 @@ logstash:
     className: "nginx"
     pathtype: ImplementationSpecific
     hosts:
-      - host: g0-auth.palethorpe.biz
+      - host: *hostname
         paths:
           - path: /ls
             servicePort: 5044
     tls:
-     - secretName: g0-auth
+     - secretName: tls-certificate
 
 
-  # service:
-  #   type: ClusterIP
-  #   ports:
-  #     - name: test-results
-  #       port: 5044
-  #       protocol: TCP
-  #       targetPort: 5044
+  service:
+    type: ClusterIP
+    ports:
+      - name: test-results
+        port: 5044
+        protocol: TCP
+        targetPort: 5044
 
 opensearch:
   install: true
@@ -359,8 +359,8 @@ opensearch:
 
   resources:
     requests:
-      cpu: "150m"
-      memory: "100Mi"
+      cpu: 50m
+      memory: 100Mi
 
   startupProbe:
     initialDelaySeconds: 30
@@ -400,8 +400,7 @@ opensearch:
       enabled: true
       additionalLabels:
         app: opensearch
-        customer-code: g001 
-    storageClass: "do-block-storage-retain"
+    storageClass: "hostpath"
     accessModes:
       - ReadWriteOnce
     size: 1Gi
@@ -425,7 +424,7 @@ opensearch-dashboards:
       opensearch.ssl.verificationMode: none
 
       opensearch.username: "admin"
-      opensearch.password: "Test@Password01"
+      opensearch.password: *ospassword
 
       # Dashboards TLS Config (Ensure the cert files are present before enabling SSL
       # ssl:
@@ -479,27 +478,6 @@ opensearch-dashboards:
 
       # assistant.chat.enabled: true
 
-      opensearchDashboards.branding:
-        logo:
-          defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-          darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-        mark:
-          defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-          darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-        loadingLogo:
-          defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-          darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
-        faviconUrl: ""
-        applicationTitle: "QAI (by GroundZero)"
-
-      securityAnalyticsDashboards.enabled: false
-
-      traceAnalyticsDashboards.enabled: false
-
-      oberservabilityDashboards.enabled: false
-
-      notebooksDashboards.enabled: false
-
     
   ingress:
     enabled: true
@@ -507,18 +485,18 @@ opensearch-dashboards:
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      cert-manager.io/cluster-issuer: "letsencrypt-staging"
     hosts:
-      - host: g0-auth.palethorpe.biz
+      - host: *hostname
         paths:
           - path: /
             backend:
               serviceName: ""
               servicePort: ""
     tls:
-    - secretName: g0-auth
+    - secretName: tls-certificate
       hosts:
-        - g0-auth.palethorpe.biz
+        - *hostname
 
 rabbitmq:
   install: false
@@ -533,7 +511,7 @@ rabbitmq:
       enabled: false
       skipVerify: true
       verify: verify_none
-      # existingSecret: default-tls-cert
+      # existingSecret: tls-certificate
       # existingSecretFullChain: true
       failIfNoPeerCert: false
 
@@ -564,8 +542,8 @@ rabbitmq:
   ingress:
     enabled: true
     ingressClassName: nginx
-    hostname: g0-auth.palethorpe.biz
-    existingSecret: g0-cr
+    hostname: *hostname
+    existingSecret: tls-certificate
     tls: true
     path: /ampq
     # extraPaths:
@@ -582,7 +560,7 @@ rabbitmq:
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
 
 kafka:
-  install: true
+  install: false
   
   clusterId: "kafka-cluster"
   replicaCount: 1

@@ -38,12 +38,61 @@ helm upgrade \
     -f ${VALUES} \
     $@
 
+#######################
+# DEv local settings
+#######################
+
+export VALUES="${VALUES:-values.local.yaml}"
+export RELEASE="${RELEASE:-qai1}"
+export NAMESPACE="${NAMESPACE:-devlocal}"
+export INSTALL_FROM="${INSTALL_FROM:-.}"
+
+export MB_PASSWORD='Gr0un40Test!!'
+export OS_PASSWORD='Gr0un40Test!!'
+
+export QAIENV_HOSTNAME='test.local'
+
+kubectl create namespace ${NAMESPACE}
+
+#TODO:
+# * Setup image pull secret for DO container registry
+
+## Secrets
+kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=opensearch-admin-password=${OS_PASSWORD}
+
+kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MB_PASSWORD} --from-literal=inter-broker-password=${MB_PASSWORD} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MB_PASSWORD} --from-literal=controller-client-secret=${MB_PASSWORD}
+
+
+# helm install ${RELEASE} ${INSTALL_FROM} -n ${NAMESPACE} --create-namespace -f ${VALUES}
+
+helm install \
+    --create-namespace \
+    ${RELEASE} ${INSTALL_FROM} \
+    -n ${NAMESPACE} \
+    -f ${VALUES} \
+    --set global.ospassword=${OS_PASSWORD} \
+    --set global.hostname=${QAIENV_HOSTNAME} \
+    $@
+
+helm upgrade \
+    --create-namespace \
+    --install ${RELEASE} ${INSTALL_FROM} \
+    --namespace ${NAMESPACE} \
+    -f ${VALUES} \
+    --set global.ospassword=${OS_PASSWORD} \
+    --set global.hostname=${QAIENV_HOSTNAME} \
+    $@
+
+helm uninstall ${RELEASE} -n ${NAMESPACE}
+
+#######################
+
 ```
 
 ```powershell
 $namespace='g0-auth-enabled'
 $release='qarp-2'
-$ospassword='Test@Password01' # Sample password for testing - do not use this  for prod deploys 
+$ospassword='' # Sample password for testing - do not use this  for prod deploys 
 
 kubectl create namespace $namespace
 kubectl create secret generic -n $namespace platform-creds --from-literal=opensearch-admin-password=$ospassword
@@ -53,8 +102,6 @@ helm install $release . -n $namespace --create-namespace -f values.yaml
 helm upgrade --install --create-namespace $release . -n $namespace -f values.yaml
 
 helm uninstall $release -n $namespace 
-
-
 
 curl -k -vvv https://localhost:9200/ -u 'admin:Test@Password01'
 
