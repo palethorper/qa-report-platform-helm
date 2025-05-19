@@ -57,7 +57,15 @@
             "TestCaseUniqueId": {
                 "type": "keyword"
             },
-            
+            "Folder": {
+              "type": "text",
+              "fields": {
+                "raw": {
+                  "type": "keyword",
+                  "ignore_above": 2048
+                }
+              }
+            },
             "tags": {
                 "type": "keyword"
             }
