@@ -12,10 +12,20 @@ put /tosca-g001-*/_mapping
         "raw": {
           "type": "keyword",
           "ignore_above": 2048
-        }s
+        }
       }
     }
   }
+}
+
+POST _reindex
+{
+ "source": {
+   "index": "tosca-g001-2023-03"
+ },
+ "dest": {
+   "index": "test-idx"
+ }
 }
 
 

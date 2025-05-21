@@ -5,12 +5,14 @@
 global:
   msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
   ip-whitelist-intneral: &ipwhiteliststring "0.0.0.0/0"
+  hostname: &hostname "g0-auth.palethorpe.biz"
+  ospassword: &ospassword "Test@Password01"
 
 logstash:
   install: true
 
   image: "registry.digitalocean.com/g0-cr/logstash-opensearch"
-  imageTag: "latest"
+  imageTag: latest
   imagePullSecrets:
     - name: g0-cr
 
@@ -20,6 +22,11 @@ logstash:
    logstash.yml: |
      http:
        host: 0.0.0.0
+
+  envFrom:
+    - secretRef:
+        name: platform-creds
+
   logstashPipeline:
     logstash.conf: |
       # override default, hardcoded, file in template.
@@ -27,6 +34,9 @@ logstash:
       input {
         beats {
           port => 5044
+        }
+        http {
+          port => 50000
         }
       }
     01_input_file-tosca-xml.conf: |
@@ -253,6 +263,7 @@ logstash:
 
               end
 
+
               # rescue
               # end
             '}
@@ -316,6 +327,9 @@ logstash:
   extraPorts:
     - name: test-results
       containerPort: 5044
+    - name: results-http
+      containerPort: 50000
+
 
   # resources:
   #   requests:
@@ -334,7 +348,7 @@ logstash:
     className: "nginx"
     pathtype: ImplementationSpecific
     hosts:
-      - host: g0-auth.palethorpe.biz
+      - host: *hostname
         paths:
           - path: /ls
             servicePort: 5044
@@ -342,13 +356,17 @@ logstash:
      - secretName: g0-auth
 
 
-  # service:
-  #   type: ClusterIP
-  #   ports:
-  #     - name: test-results
-  #       port: 5044
-  #       protocol: TCP
-  #       targetPort: 5044
+  service:
+    type: ClusterIP
+    ports:
+      - name: test-results
+        port: 5044
+        protocol: TCP
+        targetPort: 5044
+      - name: results-http
+        port: 5050
+        protocol: TCP
+        targetPort: 50000
 
 opensearch:
   install: true
@@ -387,6 +405,15 @@ opensearch:
     #
     #   rootLogger.level = info
     #   rootLogger.appenderRef.console.ref = console
+    opensearch.yml: |
+      cluster.name: opensearch-cluster
+
+      # Bind to all interfaces because we don't know what IP address Docker will assign to us.
+      network.host: 0.0.0.0
+
+      # discovery.type: single-node
+
+      script.painless.regex.enabled: true
 
   # plugins:
   #   enabled: false
@@ -407,6 +434,7 @@ opensearch:
     size: 1Gi
 
 opensearch-dashboards:
+  install: true
   # opensearchHosts: "https://opensearch-cluster-master:9200"
   replicaCount: 1
 
@@ -425,7 +453,7 @@ opensearch-dashboards:
       opensearch.ssl.verificationMode: none
 
       opensearch.username: "admin"
-      opensearch.password: "Test@Password01"
+      opensearch.password: "{{ .Values.global.ospassword }}"
 
       # Dashboards TLS Config (Ensure the cert files are present before enabling SSL
       # ssl:
@@ -442,7 +470,7 @@ opensearch-dashboards:
       # https://github.com/opensearch-project/OpenSearch-Dashboards/blob/main/config/opensearch_dashboards.yml
 
       # application_config.enabled: true
-      opensearchDashboards.defaultAppId: "discover"
+      # opensearchDashboards.defaultAppId: "discover" # DEPRECATED
       home.disableWelcomeScreen: true
 
       # Optional setting that controls the permissions of data source to create, update and delete.
@@ -457,10 +485,8 @@ opensearch-dashboards:
       # @experimental Set the value of this setting to display navigation updates, including dev tool top right navigation
       # opensearchDashboards.futureNavigation: false
 
-      # Set the value to true to enable workspace feature
-      # Please note, workspace will not work with multi-tenancy. To enable workspace feature, you need to disable multi-tenancy first with `opensearch_security.multitenancy.enabled: false`
-      # Please uncomment below uiSettings to enable new home/navigation experience when workspace is enabled
-      # opensearch_security.multitenancy.enabled: false
+      opensearch_security.multitenancy.enabled: true
+
       workspace.enabled: false
       # uiSettings:
       #   overrides:
@@ -492,14 +518,10 @@ opensearch-dashboards:
         faviconUrl: ""
         applicationTitle: "QAI (by GroundZero)"
 
-      securityAnalyticsDashboards.enabled: false
-
-      traceAnalyticsDashboards.enabled: false
-
-      oberservabilityDashboards.enabled: false
-
-      notebooksDashboards.enabled: false
-
+      # securityAnalyticsDashboards.enabled: false
+      # traceAnalyticsDashboards.enabled: false
+      # oberservabilityDashboards.enabled: false
+      # notebooksDashboards.enabled: false
     
   ingress:
     enabled: true
@@ -509,7 +531,7 @@ opensearch-dashboards:
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     hosts:
-      - host: g0-auth.palethorpe.biz
+      - host: *hostname
         paths:
           - path: /
             backend:
@@ -518,7 +540,7 @@ opensearch-dashboards:
     tls:
     - secretName: g0-auth
       hosts:
-        - g0-auth.palethorpe.biz
+        - *hostname
 
 rabbitmq:
   install: false
@@ -533,7 +555,7 @@ rabbitmq:
       enabled: false
       skipVerify: true
       verify: verify_none
-      # existingSecret: default-tls-cert
+      # existingSecret: g0-auth
       # existingSecretFullChain: true
       failIfNoPeerCert: false
 
@@ -564,8 +586,8 @@ rabbitmq:
   ingress:
     enabled: true
     ingressClassName: nginx
-    hostname: g0-auth.palethorpe.biz
-    existingSecret: g0-cr
+    hostname: *hostname
+    existingSecret: g0-auth
     tls: true
     path: /ampq
     # extraPaths:
@@ -582,13 +604,20 @@ rabbitmq:
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
 
 kafka:
-  install: true
+  install: false
   
   clusterId: "kafka-cluster"
-  replicaCount: 1
+  # replicaCount: 1
+  
+  # image:
+  #   tag: 3.9.0
 
-  sasl:
-    existingSecret: message-broker-secret
+  # # extraEnvVars:
+  # #   - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+  # #     value: "1@127.0.0.1:9094"
+
+  # sasl:
+  #   existingSecret: message-broker-secret
 
   # sasl.client.users[0]: user1
   # sasl.client.passwords[0]: *msgbrokerPassword
@@ -599,8 +628,11 @@ kafka:
   # # sasl.controller.user[0]: inter_broker_user
   # sasl.controller.password: *msgbrokerPassword
 
-  controller:
-    replicaCount: 1
+  # controller:
+  #   replicaCount: 1
+    # quorumBootstrapServers: "127.0.0.1:9094"
+    # args:
+    #   - --standalone
 
   resources:
     limits:
@@ -609,3 +641,25 @@ kafka:
     requests:
       cpu: 100m
       memory: 200Mi
+
+kafka-ui:
+  install: false
+
+  env:
+    - name: DYNAMIC_CONFIG_ENABLED
+      value: "true"
+
+  # yamlApplicationConfig:
+  #   kafka:
+  #     clusters:
+  #       - name: kafka-cluster
+  #         bootstrapServers:  kafka-cluster:9092
+  #   auth:
+  #     type: disabled
+  #   management:
+  #     health:
+  #       ldap:
+  #         enabled: false
+
+
+

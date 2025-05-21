@@ -19,6 +19,10 @@ export RELEASE="${RELEASE:-qarp-2}"
 export NAMESPACE="${NAMESPACE:-g0-auth-enabled}"
 export INSTALL_FROM="${INSTALL_FROM:-.}"
 
+export QAIENV_HOSTNAME='g0-auth.groundzero.solutions'
+
+export OS_PASSWORD="${OS_PASSWORD:-Test@Password01}"
+
 export MBPASS='P@ssw0rd11!!'
 
 kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MBPASS} --from-literal=inter-broker-password=${MBPASS} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MBPASS} --from-literal=controller-client-secret=${MBPASS}
@@ -50,9 +54,11 @@ export INSTALL_FROM="${INSTALL_FROM:-.}"
 export MB_PASSWORD='Gr0un40Test!!'
 export OS_PASSWORD='Gr0un40Test!!'
 
-export QAIENV_HOSTNAME='test.local'
+export QAIENV_HOSTNAME='devlocal.groundzero.solutions'
 
 kubectl create namespace ${NAMESPACE}
+
+kubectl apply -f ../../secrets/g0-cr-secret.yaml -n ${NAMESPACE}
 
 #TODO:
 # * Setup image pull secret for DO container registry
