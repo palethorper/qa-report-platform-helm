@@ -66,6 +66,9 @@
                 }
               }
             },
+            "ErrorMessages": {
+                "type": "text"
+            },
             "tags": {
                 "type": "keyword"
             }
