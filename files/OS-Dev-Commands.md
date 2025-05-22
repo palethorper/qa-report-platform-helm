@@ -29,9 +29,28 @@ POST _reindex
 }
 
 
-
+# UpdateFolder 
 POST tosca-g001*/_update_by_query
 {
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "exists": {
+            "field": "NodePath"
+          }
+        }
+      ],
+      "should": [],
+      "must_not": [
+        {
+          "exists": {
+            "field": "Folder"
+          }
+        }
+      ]
+    }
+  },
   "script": {
     "lang": "painless",
     "source": """
