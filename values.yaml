@@ -339,6 +339,18 @@ logstash:
     - name: results-http
       containerPort: 50000
 
+  service:
+    type: ClusterIP
+    ports:
+      - name: test-results
+        port: 5044
+        protocol: TCP
+        targetPort: 5044
+      - name: results-http
+        port: 50000
+        protocol: TCP
+        targetPort: 50000
+
 
   # resources:
   #   requests:
