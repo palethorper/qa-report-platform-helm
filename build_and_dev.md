@@ -25,6 +25,8 @@ export OS_PASSWORD="${OS_PASSWORD:-Test@Password01}"
 
 export MBPASS='P@ssw0rd11!!'
 
+kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=opensearch-admin-password=${OS_PASSWORD} --from-literal=OS_PASSWORD=${OS_PASSWORD}
+
 kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MBPASS} --from-literal=inter-broker-password=${MBPASS} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MBPASS} --from-literal=controller-client-secret=${MBPASS}
 
 

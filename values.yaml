@@ -19,10 +19,12 @@ logstash:
   persistence:
     enabled: false
   logstashConfig:
-   logstash.yml: |
-     http:
-       host: 0.0.0.0
+    logstash.yml: |
+      api.http.host: "0.0.0.0"
+      http.host: "0.0.0.0"
+      xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 
+      
   envFrom:
     - secretRef:
         name: platform-creds
@@ -293,18 +295,8 @@ logstash:
 
         if "debug" in [tags] {
           stdout { codec  => rubydebug { metadata => true } }
-        } else {
-          # elasticsearch {
-          # 	hosts => "host.docker.internal:9200"
-          # 	codec => json
-          # 	index => "%{[@metadata][index_prefix]}"	# TODO: Add date (month\year) suffix to filter
-          # 	# user => "elastic" # sort out auth!!
-          # 	# password => "${LOGSTASH_INTERNAL_PASSWORD}"
         
-          # 	# Specific for Tricentis - as setting the docuemnt id based on the UUID + revisison
-          # 	document_id => "%{UniqueId}-%{[@metadata][index_suffix]}"
-          # }
-
+        } else if [Product] == "Tosca" {
           opensearch {
             codec => json
 
@@ -312,7 +304,7 @@ logstash:
             index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
 
             user => "admin"
-            password => "Test@Password01"
+            password => "${OS_PASSWORD}"
             ssl => true
             ssl_certificate_verification => false
             
@@ -320,9 +312,24 @@ logstash:
 
             document_id => "%{UniqueId}-%{[@metadata][id_suffix]}"
           }
+        } else {
 
+          # Catch other messages to 'raw' index
+
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "raw"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+          }
         }
       }
+
 
   extraPorts:
     - name: test-results
@@ -345,13 +352,17 @@ logstash:
     annotations:
       kubernetes.io/ingress.class: "nginx"
       # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
     className: "nginx"
     pathtype: ImplementationSpecific
     hosts:
       - host: *hostname
         paths:
-          - path: /ls
+          - path: /beats
             servicePort: 5044
+          - path: /http
+            servicePort: 50000
+
     tls:
      - secretName: g0-auth
 
@@ -364,7 +375,7 @@ logstash:
         protocol: TCP
         targetPort: 5044
       - name: results-http
-        port: 5050
+        port: 50000
         protocol: TCP
         targetPort: 50000
 
@@ -427,7 +438,6 @@ opensearch:
       enabled: true
       additionalLabels:
         app: opensearch
-        customer-code: g001 
     storageClass: "do-block-storage-retain"
     accessModes:
       - ReadWriteOnce
@@ -611,11 +621,6 @@ kafka:
   
   # image:
   #   tag: 3.9.0
-
-  # # extraEnvVars:
-  # #   - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
-  # #     value: "1@127.0.0.1:9094"
-
   # sasl:
   #   existingSecret: message-broker-secret
 
@@ -629,10 +634,7 @@ kafka:
   # sasl.controller.password: *msgbrokerPassword
 
   # controller:
-  #   replicaCount: 1
-    # quorumBootstrapServers: "127.0.0.1:9094"
-    # args:
-    #   - --standalone
+  #   replicaCount: 2
 
   resources:
     limits:
