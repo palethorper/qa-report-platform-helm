@@ -22,7 +22,8 @@ logstash:
   logstashConfig:
     logstash.yml: |
       api.http.host: "0.0.0.0"
-      xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+      # xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+      # xpack.monitoring.enabled: false
 
       
   envFrom:
@@ -263,8 +264,10 @@ logstash:
                 t = paths.delete_if { |component| component.empty? }
                 event.set("[ComponentFolders]", t) 
 
-              end
+                folder = r[/^(.*)(\/.*?)$/, 1]
+                event.set("[Folder]", folder)
 
+              end
 
               # rescue
               # end
