@@ -58,13 +58,15 @@ export QAIENV_HOSTNAME='devlocal.groundzero.solutions'
 
 kubectl create namespace ${NAMESPACE}
 
+# DO container registry secret
 kubectl apply -f ../../secrets/g0-cr-secret.yaml -n ${NAMESPACE}
 
-#TODO:
-# * Setup image pull secret for DO container registry
+# SSL cert - slf signed for local
+export CERT_PATH="../../secrets/local-k8s"
+kubectl create secret tls -n ${NAMESPACE} tls-certificate --key ${CERT_PATH}/cert.key --cert ${CERT_PATH}/cert.crt
 
 ## Secrets
-kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=opensearch-admin-password=${OS_PASSWORD}
+kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=opensearch-admin-password=${OS_PASSWORD} --from-literal=OS_PASSWORD=${OS_PASSWORD}
 
 kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MB_PASSWORD} --from-literal=inter-broker-password=${MB_PASSWORD} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MB_PASSWORD} --from-literal=controller-client-secret=${MB_PASSWORD}
 

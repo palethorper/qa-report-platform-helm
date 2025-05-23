@@ -11,18 +11,20 @@ global:
 logstash:
   install: true
 
-  image: docker-elk-logstash
+  image: logstash-opensearch
   imageTag: latest
-  imagePullSecrets:
-    - name: g0-cr
+  # imagePullSecrets:
+  #   - name: g0-cr
 
   persistence:
     enabled: false
-  logstashConfig:
-   logstash.yml: |
-     http:
-       host: 0.0.0.0
 
+  logstashConfig:
+    logstash.yml: |
+      api.http.host: "0.0.0.0"
+      xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+
+      
   envFrom:
     - secretRef:
         name: platform-creds
@@ -290,8 +292,44 @@ logstash:
 
     03_output_tosca.conf: |
       output {
-        stdout { codec  => rubydebug { metadata => true } }
+
+        if "debug" in [tags] {
+          stdout { codec  => rubydebug { metadata => true } }
+        
+        } else if [Product] == "Tosca" {
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            # action => "create"
+
+            document_id => "%{UniqueId}-%{[@metadata][id_suffix]}"
+          }
+        } else {
+
+          # Catch other messages to 'raw' index
+
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "raw"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+          }
+        }
       }
+
 
   extraPorts:
     - name: test-results
@@ -310,7 +348,7 @@ logstash:
 
 
   ingress:
-    enabled: true
+    enabled: false
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
