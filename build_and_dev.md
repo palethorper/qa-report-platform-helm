@@ -15,15 +15,10 @@ helm install . --generate-name --dry-run --debug
 ```sh
 
 source ./.env.g0-auth
-
 source ./.env.g0-dev1
-
 source ./.env.devlocal
 
-
-
-
-kubectl create namespace ${NAMESPACE}
+kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
 # DO container registry secret
 kubectl apply -f ../../secrets/g0-cr-secret.yaml -n ${NAMESPACE}
@@ -41,7 +36,7 @@ kubectl create secret tls -n ${NAMESPACE} tls-certificate --key ${CERT_PATH}/cer
 
 ## Secrets
 
-kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=opensearch-admin-password=${OS_PASSWORD} --from-literal=OS_PASSWORD=${OS_PASSWORD}
+kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=OS_PASSWORD=${OS_PASSWORD}
 
 kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MB_PASSWORD} --from-literal=inter-broker-password=${MB_PASSWORD} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MB_PASSWORD} --from-literal=controller-client-secret=${MB_PASSWORD}
 
@@ -57,6 +52,10 @@ helm upgrade \
     $@
 
 helm uninstall ${RELEASE} -n ${NAMESPACE}
+
+# Post inital deployment - Esure
+#  - DNS entreis are create for 
+
 
 # Install 
 # helm install \
@@ -78,7 +77,7 @@ helm uninstall ${RELEASE} -n ${NAMESPACE}
 # $ospassword='' # Sample password for testing - do not use this  for prod deploys 
 
 # kubectl create namespace $namespace
-# kubectl create secret generic -n $namespace platform-creds --from-literal=opensearch-admin-password=$ospassword
+# kubectl create secret generic -n $namespace platform-creds --from-literal=OS_PASSWORD=$ospassword
 
 # helm install $release . -n $namespace --create-namespace -f values.yaml
 

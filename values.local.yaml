@@ -442,7 +442,7 @@ opensearch:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     valueFrom:
       secretKeyRef:
-        key:  opensearch-admin-password
+        key:  OS_PASSWORD
         name: platform-creds
   #   - name: DISABLE_SECURITY_PLUGIN
   #     value: "false"

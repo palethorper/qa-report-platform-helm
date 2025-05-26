@@ -426,7 +426,7 @@ opensearch:
   singleNode: true
 
   image:
-    tag: "2.19.1"
+    tag: "2.19.2"
 
   resources:
     requests:
@@ -438,15 +438,20 @@ opensearch:
 
   sysctlInit:
     enabled: true
+  
+  # envFrom:
+  # - secretRef:
+  #     name: platform-creds
 
   extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
     valueFrom:
       secretKeyRef:
-        key:  opensearch-admin-password
+        key:  OS_PASSWORD
         name: platform-creds
   #   - name: DISABLE_SECURITY_PLUGIN
   #     value: "false"
+
   config:
     # log4j2.properties: |
     #   status = error
@@ -466,12 +471,10 @@ opensearch:
 
       # discovery.type: single-node
 
+      reindex.remote.whitelist: ["*.svc.cluster.local:9200"]
+
       script.painless.regex.enabled: true
 
-  # plugins:
-  #   enabled: false
-  #   installList:
-  #   - example-fake-plugin
 
   persistence:
     enabled: true
@@ -491,7 +494,7 @@ opensearch-dashboards:
   replicaCount: 1
 
   image:
-    tag: "2.19.1"
+    tag: "2.19.2"
   # extraEnvs:
   # - name: "DISABLE_SECURITY_PLUGIN"
   #   value: "false"
@@ -638,7 +641,13 @@ rabbitmq:
       cpu: 150m
       memory: 250Mi
 
-
+  # Note: Not tested, should be fine though
+  persistance:
+    enabled: false
+    size: 1Gi
+    storageClass: "do-block-storage-retain"
+    accessModes:
+      - ReadWriteOnce
 
   ingress:
     enabled: true
@@ -690,6 +699,8 @@ kafka:
     requests:
       cpu: 100m
       memory: 200Mi
+  
+  # TODO: If re-enable - persistance and sizing
 
 kafka-ui:
   install: false
