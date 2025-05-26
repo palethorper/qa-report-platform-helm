@@ -44,7 +44,7 @@ ingress-nginx:
         service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
         service.beta.kubernetes.io/do-loadbalancer-type: "REGIONAL_NETWORK"
         # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
-        # ervice.beta.kubernetes.io/do-loadbalancer-deny-rules: "cidr:198.51.100.0/16"
+        # service.beta.kubernetes.io/do-loadbalancer-deny-rules: "cidr:198.51.100.0/16"
       loadBalancerSourceRanges:
         - *ipwhiteliststring
         # - 0.0.0.0/0

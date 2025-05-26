@@ -37,8 +37,16 @@ ingress-nginx:
     publishService:
       enabled: true
     service:
-      annotations:
+    #   annotations:
+        # service.beta.kubernetes.io/do-loadbalancer-hostname: *do-lb-workaround-hostname
+        # service.beta.kubernetes.io/do-loadbalancer-name: *do-lb-workaround-hostname
+        # service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
+        # service.beta.kubernetes.io/do-loadbalancer-type: "REGIONAL_NETWORK"
         # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
+        # service.beta.kubernetes.io/do-loadbalancer-deny-rules: "cidr:198.51.100.0/16"
+      loadBalancerSourceRanges:
+        - *ipwhiteliststring
+        # - 0.0.0.0/0
 
 logstash:
   install: true
