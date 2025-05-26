@@ -1,0 +1,6 @@
+
+Remember to create DNS entries for:
+
+    {{ .Values.global.hostname }}
+    {{ .Values.global.loadBalancerHostname }}
+

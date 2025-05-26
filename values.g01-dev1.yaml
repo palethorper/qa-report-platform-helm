@@ -4,7 +4,7 @@
 
 global:
   hostname: &fqdn "qai-g01-dev1.groundzero.solutions"
-  do-lb-workaround-hostname: &do-lb-workaround-hostname "qai-g01-dev1-lb.groundzero.solutions"
+  loadBalancerHostname: &do-lb-workaround-hostname "qai-g01-dev1-lb.groundzero.solutions"
 
   ospassword: &ospassword "Test@Password01"
   msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
