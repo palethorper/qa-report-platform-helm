@@ -25,6 +25,7 @@ dependencies:
 - name: opensearch-dashboards
   repository: https://opensearch-project.github.io/helm-charts
   version: ">0.0.1"
+  condition: opensearch-dashboards.install
 - name: opensearch
   version: ">0.0.1"
   repository: https://opensearch-project.github.io/helm-charts/
@@ -41,3 +42,7 @@ dependencies:
   version: ">0.0.1"
   repository: https://provectus.github.io/kafka-ui-charts
   condition: kafka-ui.install
+- name: ingress-nginx
+  version: ">0.0.1"
+  repository: https://kubernetes.github.io/ingress-nginx
+  condition: ingress-nginx.install

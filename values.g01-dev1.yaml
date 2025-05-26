@@ -22,10 +22,10 @@ ingress-nginx:
   install: true
 
   tcp:
-    "5044": "devlocal/qai1-logstash:5044"
-    "50000": "devlocal/qai1-logstash:50000"
-    # "9092": "devlocal/qai-kafka:9092"
-    # "9200": "devlocal/qai-elasticsearch:9200"
+    "5044": "g01-dev1/qai-logstash:5044"
+    "50000": "g01-dev1/qai-logstash:50000"
+    # "9092": "g01-dev1/qa-kafka:9092"
+    # "9200": "g01-dev1/qa-elasticsearch:9200"
 
   controller:
     progressDeadlineSeconds: 600
@@ -39,15 +39,20 @@ ingress-nginx:
       enabled: true
     service:
       annotations:
+        # service.beta.kubernetes.io/do-loadbalancer-hostname: *do-lb-workaround-hostname
+        service.beta.kubernetes.io/do-loadbalancer-name: *do-lb-workaround-hostname
+        service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
         # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
+        service.beta.kubernetes.io/do-loadbalancer-type: "REGIONAL_NETWORK"
+        # service.beta.kubernetes.io/do-loadbalancer-allow-rules: "cidr:0.0.0.0/0"
 
 logstash:
   install: true
 
-  image: logstash-opensearch
+  image: "registry.digitalocean.com/g0-cr/logstash-opensearch"
   imageTag: latest
-  # imagePullSecrets:
-  #   - name: g0-cr
+  imagePullSecrets:
+    - name: g0-cr
 
   persistence:
     enabled: false
@@ -422,8 +427,8 @@ opensearch:
 
   resources:
     requests:
-      cpu: 50m
-      memory: 100Mi
+      cpu: "150m"
+      memory: "100Mi"
 
   startupProbe:
     initialDelaySeconds: 30
@@ -460,9 +465,6 @@ opensearch:
 
       script.painless.regex.enabled: true
 
-      path.repo: ["/usr/share/opensearch/data/snapshots"]
-      
-
   # plugins:
   #   enabled: false
   #   installList:
@@ -475,7 +477,7 @@ opensearch:
       enabled: true
       additionalLabels:
         app: opensearch
-    storageClass: "hostpath"
+    storageClass: "do-block-storage-retain"
     accessModes:
       - ReadWriteOnce
     size: 1Gi
@@ -579,13 +581,12 @@ opensearch-dashboards:
       # nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
       # nginx.ingress.kubernetes.io/use-regex: 'true'
       # nginx.ingress.kubernetes.io/rewrite-target: /$2
-      # cert-manager.io/cluster-issuer: "selfsigned-issuer"
-      # cert-manager.io/issuer: "selfsigned-cluster-issuer"
+      # service.beta.kubernetes.io/do-loadbalancer-allow-rules: "cidr:0.0.0.0/0"
     hosts:
       - host: *fqdn
         paths:
           - path: /
-            pathType: ImplementationSpecific
+            # pathType: ImplementationSpecific
             backend:
               serviceName: ""
               servicePort: ""
@@ -637,7 +638,7 @@ rabbitmq:
 
 
   ingress:
-    enabled: false
+    enabled: true
     ingressClassName: nginx
     hostname: *fqdn
     existingSecret: tls-certificate
