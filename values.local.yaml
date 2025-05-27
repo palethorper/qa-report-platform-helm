@@ -3,8 +3,8 @@
 #TODO: Add opensearch output plugin!!
 
 global:
-  hostname: &fqdn "qai-g01-dev1.groundzero.solutions"
-  loadBalancerHostname: &do-lb-workaround-hostname "qai-g01-dev1-lb.groundzero.solutions"
+  hostname: &fqdn "devlocal.groundzero.solutions"
+  loadBalancerHostname: &do-lb-workaround-hostname "devlocal-lb.groundzero.solutions"
 
   ospassword: &ospassword "Test@Password01"
   msgbrokerPassword: &msgbrokerPassword P@ssw0rd11!!
@@ -477,7 +477,7 @@ opensearch:
 
       # discovery.type: single-node
 
-      reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:9200"]
+      reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
       reindex.ssl.verification_mode: none
 
       script.painless.regex.enabled: true
