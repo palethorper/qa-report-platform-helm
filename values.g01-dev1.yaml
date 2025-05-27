@@ -438,10 +438,6 @@ opensearch:
 
   sysctlInit:
     enabled: true
-  
-  # envFrom:
-  # - secretRef:
-  #     name: platform-creds
 
   extraEnvs:
   - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
@@ -451,6 +447,16 @@ opensearch:
         name: platform-creds
   #   - name: DISABLE_SECURITY_PLUGIN
   #     value: "false"
+
+  # secretMounts:
+  # - name: tls-certificate
+  #   mountPath: /usr/share/opensearch/config
+  #   path: /usr/share/opensearch/config/esnode.pem
+  #   subPath: tls.crt
+  # - name: tls-certificate
+  #   mountPath: /usr/share/opensearch/config
+  #   path: /usr/share/opensearch/config/esnode-key.pem
+  #   subPath: tls.key
 
   config:
     # log4j2.properties: |
@@ -472,6 +478,7 @@ opensearch:
       # discovery.type: single-node
 
       reindex.remote.whitelist: ["*.svc.cluster.local:9200"]
+      reindex.ssl.verification_mode: none
 
       script.painless.regex.enabled: true
 
@@ -494,7 +501,7 @@ opensearch-dashboards:
   replicaCount: 1
 
   image:
-    tag: "2.19.2"
+    tag: "2.19.1"
   # extraEnvs:
   # - name: "DISABLE_SECURITY_PLUGIN"
   #   value: "false"

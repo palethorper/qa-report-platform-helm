@@ -1,8 +1,10 @@
-get /_cat/indice
+get /_cat/indices
+
 get /_template/tosca-template
-get /tosca-g001-2023-03/_mapping
 
+get /tosca-g001-2020-05/_mapping
 
+# Update mapping
 put /tosca-g001-*/_mapping
 {
   "properties": {
@@ -18,14 +20,21 @@ put /tosca-g001-*/_mapping
   }
 }
 
+# Re-index
 POST _reindex
 {
- "source": {
-   "index": "tosca-g001-2023-03"
- },
- "dest": {
-   "index": "test-idx"
- }
+  "source": {
+    "remote": {
+      "host": "https://opensearch-cluster-master.g0-auth-enabled.svc.cluster.local:9200",
+      "username": "admin",
+      "password": "Test@Password01"
+    },
+    "index": "tosca-g001-2025-04"
+
+  },
+  "dest": {
+    "index": "tosca-g001-2025-04"
+  }
 }
 
 

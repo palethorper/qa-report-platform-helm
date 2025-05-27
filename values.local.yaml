@@ -15,6 +15,7 @@ global:
 
   certificateIssuerName: &certificateIssuerName "letsencrypt-prod"
   
+
   # letsencrypt-contact: "rpalethorpe@groundzero.solutions" # TODO: Fix contact paramter [Low]
 
 ingress-nginx:
@@ -446,6 +447,7 @@ opensearch:
         name: platform-creds
   #   - name: DISABLE_SECURITY_PLUGIN
   #     value: "false"
+
   config:
     # log4j2.properties: |
     #   status = error
@@ -465,15 +467,13 @@ opensearch:
 
       # discovery.type: single-node
 
-      script.painless.regex.enabled: true
+      reindex.remote.whitelist: ["*.svc.cluster.local:9200"]
 
+      script.painless.regex.enabled: true
+      
       path.repo: ["/usr/share/opensearch/data/snapshots"]
       
 
-  # plugins:
-  #   enabled: false
-  #   installList:
-  #   - example-fake-plugin
 
   persistence:
     enabled: true
@@ -641,7 +641,13 @@ rabbitmq:
       cpu: 150m
       memory: 250Mi
 
-
+  # Note: Not tested, should be fine though
+  persistance:
+    enabled: false
+    size: 1Gi
+    storageClass: "do-block-storage-retain"
+    accessModes:
+      - ReadWriteOnce
 
   ingress:
     enabled: false
@@ -693,6 +699,8 @@ kafka:
     requests:
       cpu: 100m
       memory: 200Mi
+  
+  # TODO: If re-enable - persistance and sizing
 
 kafka-ui:
   install: false
