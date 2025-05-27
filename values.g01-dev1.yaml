@@ -426,7 +426,7 @@ opensearch:
   singleNode: true
 
   image:
-    tag: "2.19.2"
+    tag: "2.19.1"
 
   resources:
     requests:

@@ -448,6 +448,16 @@ opensearch:
   #   - name: DISABLE_SECURITY_PLUGIN
   #     value: "false"
 
+  # secretMounts:
+  # - name: tls-certificate
+  #   mountPath: /usr/share/opensearch/config
+  #   path: /usr/share/opensearch/config/esnode.pem
+  #   subPath: tls.crt
+  # - name: tls-certificate
+  #   mountPath: /usr/share/opensearch/config
+  #   path: /usr/share/opensearch/config/esnode-key.pem
+  #   subPath: tls.key
+
   config:
     # log4j2.properties: |
     #   status = error
@@ -468,6 +478,7 @@ opensearch:
       # discovery.type: single-node
 
       reindex.remote.whitelist: ["*.svc.cluster.local:9200"]
+      reindex.ssl.verification_mode: none
 
       script.painless.regex.enabled: true
       
