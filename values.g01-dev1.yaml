@@ -164,6 +164,8 @@ logstash:
             '
           }
 
+          # TODO: What if the Modified Date is salso Unknown?
+          
           # Workaround for value of 'unknown'
           if [CreatedAt] == "Unknown" {
             mutate {
@@ -172,7 +174,8 @@ logstash:
           }
 
           date {
-            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[ModifiedAt]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
             # timezone => "Australia/Sydney"
             target => "@timestamp"
             # remove_field => [ "ModifiedAt" ]
@@ -180,7 +183,8 @@ logstash:
           }
 
           date {
-            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[ModifiedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[ModifiedAt]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
             # timezone => "Australia/Sydney"
             target => "ModifiedAt"
             # remove_field => [ "ModifiedAt" ]
@@ -188,21 +192,26 @@ logstash:
           }
 
           date {
-            match => ["[ModifiedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[ModifiedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[ModifiedAtDate]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
             # timezone => "Australia/Sydney"
             target => "ModifiedAtDate"
             tag_on_failure => ["_dateparsefailure_ModifiedAtDate"]
           }
 
           date {
-            match => ["[CreatedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[CreatedAt]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[CreatedAt]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
+
             # timezone => "Australia/Sydney"
             target => "CreatedAt"
             tag_on_failure => ["_dateparsefailure_CreatedAt"]
           }
 
           date {
-            match => ["[CreatedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[CreatedAtDate]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[CreatedAtDate]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
+
             # timezone => "Australia/Sydney"
             target => "CreatedAtDate"
             tag_on_failure => ["_dateparsefailure_CreatedAtDate"]
@@ -210,7 +219,9 @@ logstash:
 
           # Set Execution list evetime time to StartTime
           date {
-            match => ["[StartTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[StartTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a", "ISO8601", "yyyy-MM-dd h:mm:ssZ"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[StartTime]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
+            
             # timezone => "Australia/Sydney"
             target => "@timestamp"
             tag_on_failure => ["_dateparsefailure_StartTime"]
@@ -224,7 +235,8 @@ logstash:
           }
 
           date {
-            match => ["[EndTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            # match => ["[EndTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+            match => ["[EndTime]","ISO8601", "yyyy-MM-dd h:mm:ssZ"]
             # timezone => "Australia/Sydney"
             target => "EndTime"
             tag_on_failure => ["_dateparsefailure_EndTime"]
@@ -326,6 +338,13 @@ logstash:
             '
           }
 
+          # Raw index prefis output
+          if "raw" in [tags] {
+            mutate {
+              update => { "[@metadata][index_prefix]" => "raw-%{[@metadata][index_prefix]}" }
+            }
+          }
+          
           mutate {
             update => { "_id" => "%{UniqueId}-%{[@metadata][id_suffix]}" }
           }
@@ -339,8 +358,10 @@ logstash:
 
         if "debug" in [tags] {
           stdout { codec  => rubydebug { metadata => true } }
+        } # else 
         
-        } else if [Product] == "Tosca" {
+        if [Product] == "Tosca" {
+
           opensearch {
             codec => json
 
@@ -361,10 +382,10 @@ logstash:
           # Catch other messages to 'raw' index
 
           opensearch {
-            codec => json
+            # codec => json
 
             hosts => ["https://opensearch-cluster-master:9200"]
-            index => "raw"
+            index => "raw-other"
 
             user => "admin"
             password => "${OS_PASSWORD}"
@@ -426,7 +447,7 @@ opensearch:
   singleNode: true
 
   image:
-    tag: "2.19.1"
+    tag: "2.19.2"
 
   resources:
     requests:
@@ -477,8 +498,15 @@ opensearch:
 
       # discovery.type: single-node
 
-      reindex.remote.whitelist: ["*.svc.cluster.local:9200"]
+	  # TODO: Remove for prod\cust installs
+      reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
+      
       reindex.ssl.verification_mode: none
+
+      # For security plugin - session timeouts
+      opensearch_security.cookie.ttl: 86400000
+      opensearch_security.session.ttl: 86400000
+      opensearch_security.session.keepalive: true
 
       script.painless.regex.enabled: true
 
