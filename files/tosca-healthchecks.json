@@ -1,8 +1,9 @@
 // POST _template/tosca-template
 {
-    "order": 1,
+    "order": 0,
     "index_patterns": [
-        "tosca-*"
+        "tosca*healthcheck*",
+        "backup-*healthcheck*"
     ],
     "settings": {
         "index": {
@@ -27,19 +28,12 @@
         ],
         "date_detection": true,
         "properties": {
-            "LogInfo": {
-                "type": "text"
-            },
-            "AggregatedDescription": {
-                "type": "text"
-            },
             "Description": {
                 "type": "text"
             },
             "Name": {
                 "type": "keyword"
             },
-            
             "@timestamp": {
                 "type": "date"
             },
@@ -49,40 +43,10 @@
             "EndTime": {
                 "type": "date"
             },
-            
-            "index_prefix": {
-                "type": "keyword"
-            },
-            "ParentSurrogateNum": {
-                "type": "keyword"
-            },
-            "UniqueId": {
-                "type": "keyword"
-            },
-            "ExecutionListUniqueId": {
-                "type": "keyword"
-            },
-            "TestCaseUniqueId": {
-                "type": "keyword"
-            },
-            "Folder": {
-              "type": "text",
-              "fields": {
-                "raw": {
-                  "type": "keyword",
-                  "ignore_above": 2048
-                }
-              }
-            },
-            "ErrorMessages": {
-                "type": "text"
-            },
             "tags": {
                 "type": "keyword"
-            },
-            "ExecutionListEntryUniqueId": {
-              "type": "keyword"
             }
+            
         }
     },
     "aliases": {}
