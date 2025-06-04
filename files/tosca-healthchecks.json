@@ -1,4 +1,4 @@
-// POST _template/tosca-template
+// POST _template/tosca-healthcheck
 {
     "order": 0,
     "index_patterns": [
