@@ -16,6 +16,34 @@
         "dynamic": true,
         "dynamic_templates": [
             {
+                "uniqueids_as_keywords": {
+                    "match_mapping_type": "*",
+                    "path_match": [
+                        "*UniqueId.*",
+                        "*.UniqueId",
+                        "*ParentSurrogateNum*",
+                        "ParentSurrogateNum"
+                    ],
+                    "mapping": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            {
+                "date_matches": {
+                    "match_mapping_type": "*",
+                    "path_match": [
+                        "*StartTime*",
+                        "*EndTime*",
+                        "*CreatedAt*",
+                        "*ModifiedAt*"
+                    ],
+                    "mapping": {
+                        "type": "date"
+                    }
+                }
+            },
+            {
                 "strings": {
                     "mapping": {
                         "ignore_above": 512,
@@ -39,7 +67,6 @@
             "Name": {
                 "type": "keyword"
             },
-            
             "@timestamp": {
                 "type": "date"
             },
@@ -49,7 +76,6 @@
             "EndTime": {
                 "type": "date"
             },
-            
             "index_prefix": {
                 "type": "keyword"
             },
@@ -66,13 +92,13 @@
                 "type": "keyword"
             },
             "Folder": {
-              "type": "text",
-              "fields": {
-                "raw": {
-                  "type": "keyword",
-                  "ignore_above": 2048
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword",
+                        "ignore_above": 2048
+                    }
                 }
-              }
             },
             "ErrorMessages": {
                 "type": "text"
@@ -81,7 +107,61 @@
                 "type": "keyword"
             },
             "ExecutionListEntryUniqueId": {
-              "type": "keyword"
+                "type": "keyword"
+            },
+            "ExecutionEntry": {
+                "properties": {
+                    "CreatedAt": {
+                        "type": "date"
+                    },
+                    "ExecutionTestCaseLogExecutionSessionId": {
+                        "type": "keyword"
+                    },
+                    "ExecutionTestCaseLogUniqueId": {
+                        "type": "keyword"
+                    },
+                    "ModifiedAt": {
+                        "type": "date"
+                    },
+                    "ParentSurrogateNum": {
+                        "type": "keyword"
+                    },
+                    "UniqueId": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "ExecutionList": {
+                "properties": {
+                    "CreatedAt": {
+                        "type": "date"
+                    },
+                
+                    "ModifiedAt": {
+                        "type": "date"
+                    },
+                    "ParentSurrogateNum": {
+                        "type": "keyword"
+                    },
+                    "ProjectId": {
+                        "type": "keyword"
+                    },
+                    "Properties": {
+                        "properties": {
+                            "Name": {
+                                "type": "keyword",
+                                "ignore_above": 512
+                            },
+                            "Value": {
+                                "type": "keyword",
+                                "ignore_above": 512
+                            }
+                        }
+                    },
+                    "UniqueId": {
+                        "type": "keyword"
+                    }
+                }
             }
         }
     },

@@ -143,6 +143,8 @@ logstash:
 
           ruby {
             code => '
+              tags = [] if tags.nil?
+
               x = event.get("[@metadata][index_prefix]").downcase
               event.set("[@metadata][index_prefix]",x)
 
@@ -157,10 +159,12 @@ logstash:
               end
 
               # Keep metadata
-              event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+              if tags.include?("debug") then
+                event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+              end
 
               event.remove("_xml")
-              event.remove("message")
+              # event.remove("message")
             '
           }
 
@@ -331,6 +335,15 @@ logstash:
                 t = paths.delete_if { |component| component.empty? }
                 event.set("[ComponentFolders]", t)
 
+                tags = event.get("[tags]")
+                tags = [] if tags.nil?
+                t.each{|x| tags << x }
+                event.set("[tags]", tags)
+
+                t.each {|x| 
+                  event.set("[Folder]", x)
+                } 
+                
                 folder = r[/^(.*)(\/.*?)$/, 1]
                 event.set("[Folder]", folder)
 
@@ -349,7 +362,6 @@ logstash:
               suffix = t.strftime("%Y-%m")
               # suffix = ("-" + suffix + "-%{[Workspace]}").downcase
               event.set("[@metadata][index_suffix]", "-" + suffix)
-
             '
           }
 
@@ -358,14 +370,15 @@ logstash:
             mutate {
               update => { "[@metadata][index_prefix]" => "raw-%{[@metadata][index_prefix]}" }
             }
-          }
+          }         
           
           
           if [TQL] and [Group] {
             # Is q TQL result - don't set an id for it - let it autogneerate
-            
-            # Write to healthcheckindiex
+
             mutate {
+              add_tag => [ "healthcheck" ]
+              # Write to healthcheckindiex
               update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
             }
 
@@ -378,6 +391,12 @@ logstash:
             mutate {
               update => { "_id" => "%{UniqueId}-%{[@metadata][id_suffix]}" }
             }
+          }
+
+          # Some final cleanup
+          mutate {
+            remove_tag => [ "beats_input_raw_event", "ComponentFolders" ]
+            # remove_field => [ "other" ]
           }
 
         }

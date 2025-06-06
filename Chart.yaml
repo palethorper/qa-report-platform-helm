@@ -46,3 +46,7 @@ dependencies:
   version: ">0.0.1"
   repository: https://kubernetes.github.io/ingress-nginx
   condition: ingress-nginx.install
+- name: strimzi-kafka-operator
+  version: ">0.0.1"
+  repository: https://strimzi.io/charts
+  condition: strimzi-kafka-operator.install
