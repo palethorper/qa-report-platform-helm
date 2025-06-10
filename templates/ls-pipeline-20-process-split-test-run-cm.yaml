@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls-pipeline-20-process-split-test-run-cm
+data:
+  20-process-split-test-case.conf: |
+    input {
+      pipeline { address => "20-process-split-test-run" }
+    }
+    
+    filter {
+      split { field => "[test-run]" }
+
+      ruby  {
+        code => '
+          h = event.get("[test-run]")
+          h.each {|k,v| event.set(k,v) } if h
+      '}
+
+    }
+
+  30_output_tosca.conf: |
+    output { pipeline { send_to => ["30-output-common"] } }

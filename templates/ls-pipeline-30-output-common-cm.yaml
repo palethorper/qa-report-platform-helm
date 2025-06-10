@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls-pipeline-30-output-common-cm
+data:
+  30_common.conf: |
+    input {
+      pipeline { address => "30-output-common" }
+    }
+
+    filter {
+      mutate {
+        merge => { "[tags]" => "[source][tags]"}
+        remove_field => [ "[test-cases]", "[test-run]", "[test-suites]", "[event]", "[url]", "[user_agent]", "[http]", "[host]" ]
+      }
+    }
+
+    output {
+
+      if "debug" in [tags] {
+        stdout { codec  => rubydebug { metadata => true } }
+      } # else 
+      
+      if [Product] =~ "Tosca" {
+
+        if [UniqueId] {
+        
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            # action => "create"
+
+            document_id => "%{UniqueId}-%{[@metadata][id_suffix]}"
+          }
+
+        } else {
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            # action => "create"
+          }
+
+        }
+
+      } else {
+
+        # Catch other messages to 'raw' index
+
+        opensearch {
+          # codec => json
+
+          hosts => ["https://opensearch-cluster-master:9200"]
+          index => "raw-other"
+
+          user => "admin"
+          password => "${OS_PASSWORD}"
+          ssl => true
+          ssl_certificate_verification => false
+        }
+      }
+    }

@@ -1,0 +1,298 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls-pipeline-10-input-cm
+data:
+  01_input_default.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+    
+  02_filter_tosca.conf: |
+    filter {
+      if [Product] =~ "Tosca.*" and ![AddedToListDate] {
+
+        # Get rid of the header message in xml
+        if [message] =~ /xml version=/ { drop { } }
+
+
+        # xml {
+        # 	source => "message"
+        # 	store_xml => true
+        # 	target => "_xml"
+        # 	force_array => false
+        # 	# max_lines => 5000
+        # }
+
+        mutate {
+          add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }
+          lowercase => [ "[@metadata][index_prefix]" ]
+          # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
+          add_field => { "eventtime"=> "%{@timestamp}" }
+        }
+
+        ruby {
+          code => '
+            tags = [] if tags.nil?
+
+            x = event.get("[@metadata][index_prefix]").downcase
+            event.set("[@metadata][index_prefix]",x)
+
+            y = event.get("_xml")
+
+            if !y.nil?
+              y.each {|k, v|
+                v.gsub!(/^true$/i,"true") if !v.nil?
+                v.gsub!(/^false$/i,"false") if !v.nil?
+                event.set(k,v)
+              }
+            end
+
+            # Keep metadata
+            if tags.include?("debug") then
+              event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+            end
+
+            event.remove("_xml")
+            # event.remove("message")
+          '
+        }
+
+        # TODO: What if the Modified Date is salso Unknown?
+        
+        # Workaround for value of 'unknown'
+        if [CreatedAt] == "Unknown" {
+          mutate {
+            remove_field => [ "[CreatedAt]" ]
+            add_tag => [ "date-unknown", "CreatedAt" ]
+          }
+        }
+        
+        if [ModifiedAt] == "Unknown" {
+          mutate {
+            remove_field => [ "[ModifiedAt]" ]
+          }
+
+          # Only add if not already added ..
+          if "date-unknown" not in [tags] {
+            mutate {
+              add_tag => [ "date-unknown", "ModifiedAt" ]
+            }
+          }
+
+        }
+
+        date {
+          # match => ["[ModifiedAt]","dd/MM/yyyy H:mm:ss a","dd/M/yyyy H:mm:ss a", "ISO8601", "yyyy-MM-dd HH:mm:ssZ"] # "MM/dd/yyyy H:mm:ss a","M/dd/yyyy HH:mm:ss a",
+          match => ["[ModifiedAt]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          # timezone => "Australia/Sydney"
+          target => "@timestamp"
+          # remove_field => [ "ModifiedAt" ]
+          tag_on_failure => ["_dateparsefailure_ModifiedAt"]
+        }
+
+        date {
+          # match => ["[ModifiedAt]","dd/MM/yyyy H:mm:ss a","dd/M/yyyy H:mm:ss a", "ISO8601", "yyyy-MM-dd HH:mm:ssZ"] # "MM/dd/yyyy H:mm:ss a","M/dd/yyyy HH:mm:ss a",
+          match => ["[ModifiedAt]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          # timezone => "Australia/Sydney"
+          target => "ModifiedAt"
+          # remove_field => [ "ModifiedAt" ]
+          tag_on_failure => ["_dateparsefailure_ModifiedAt"]
+        }
+
+        date {
+          # match => ["[ModifiedAtDate]","dd/MM/yyyy H:mm:ss a","dd/M/yyyy H:mm:ss a", "ISO8601", "yyyy-MM-dd H:mm:ssZ"] # "MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a",
+          match => ["[ModifiedAtDate]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          # timezone => "Australia/Sydney"
+          target => "ModifiedAtDate"
+          tag_on_failure => ["_dateparsefailure_ModifiedAtDate"]
+        }
+
+        date {
+          # match => ["[CreatedAt]","dd/MM/yyyy H:mm:ss a","dd/M/yyyy H:mm:ss a", "ISO8601", "yyyy-MM-dd HH:mm:ssZ"] # "MM/dd/yyyy H:mm:ss a","M/dd/yyyy H:mm:ss a",
+          match => ["[CreatedAt]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+
+          # timezone => "Australia/Sydney"
+          target => "CreatedAt"
+          tag_on_failure => ["_dateparsefailure_CreatedAt"]
+        }
+
+        date {
+          match => ["[CreatedAtDate]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          target => "CreatedAtDate"
+          tag_on_failure => ["_dateparsefailure_CreatedAtDate"]
+        }
+
+        # Set Execution list evetime time to StartTime
+        date {
+          match => ["[StartTime]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          target => "@timestamp"
+          tag_on_failure => ["_dateparsefailure_StartTime"]
+        }
+
+        date {
+          match => ["[StartTime]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          target => "StartTime"
+          tag_on_failure => ["_dateparsefailure_StartTime"]
+        }
+
+        if [ObjectType] == "ExecutionTestCaseLog" and [StartTime] {
+          mutate {
+            update => { "StartTime" => "%{@timestamp}" }
+          }
+        }
+
+        date {
+          # match => ["[EndTime]","dd/MM/yyyy h:mm:ss a","dd/M/yyyy h:mm:ss a"] # "MM/dd/yyyy h:mm:ss a","M/dd/yyyy h:mm:ss a",
+          match => ["[EndTime]","ISO8601", "yyyy-MM-dd HH:mm:ssZ"]
+          # timezone => "Australia/Sydney"
+          target => "EndTime"
+          tag_on_failure => ["_dateparsefailure_EndTime"]
+        }
+
+
+        mutate {
+          gsub => [ "NodePath", "^\s*", "", "message", "\s*$", ""]
+
+          convert => { "UpdateRevision" => "integer" }
+          convert => { "Revision" => "integer" }
+
+          convert => { "HasMissingReferences" => "boolean" }
+          convert => { "IsTemplate" => "boolean" }
+          convert => { "Disabled" => "boolean" }
+          convert => { "IncludeForSynchronization" => "boolean" }
+          convert => { "IsBusinessTestCase" => "boolean" }
+          convert => { "ChangesAllowed" => "boolean" }
+          convert => { "IsCheckedOutByMe" => "boolean" }
+
+          # ExecutionList
+          convert => { "NumberOfTestCases" => "integer" }
+          convert => { "NumberOfTestCasesFailed" => "integer" }
+          convert => { "NumberOfTestCasesPassed" => "integer" }
+          convert => { "NumberOfTestCasesNotExecuted" => "integer" }
+          convert => { "NumberOfTestCasesWithUnknownState" => "integer" }
+
+          convert => { "IsViewingAllowed" => "boolean" }
+          convert => { "IsOsvItem" => "boolean" }
+          convert => { "HasNotUniqueNamedSubparts" => "boolean" }
+          convert => { "OwningGroupInherited" => "boolean" }
+          convert => { "IncludeInAnalytics" => "boolean" }
+          convert => { "IsMandate" => "boolean" }
+          convert => { "HasMandates" => "boolean" }
+          convert => { "ContainsClassic" => "boolean" }
+          convert => { "IsBusinessExecutionList" => "boolean" }
+          convert => { "HasInconsistentParallelizationState" => "boolean" }
+          convert => { "IncludeForAccumulation" => "boolean" }
+          convert => { "IncludeForAccumulation" => "boolean" }
+
+          convert => { "ManualItems" => "integer" }
+          convert => { "AutomatedItems" => "integer" }
+
+          #TestCaseLog
+          convert => { "IsDeletedFromFileService" => "boolean" }
+          convert => { "RetainOnFileService" => "boolean" }
+          convert => { "Canceled" => "boolean" }
+          convert => { "Recovered" => "boolean" }
+
+          convert => { "Duration" => "float" }
+
+          # TODO: Only remove original event if NOT failed processing
+          remove_field => [ "[event][original]", "[$id]" ]
+          # remove_field => [ "[log][file]][path]" ]
+        }
+
+        # Drop soem duplicates
+        # if [ObjectType] == 'TestCase' and [UpdateRevision] == ''  { drop { } }
+
+        kv {
+          source => "TCProperties"
+          target => "[Properties]"
+          include_brackets => false
+          field_split => ' '
+          trim_key => " "
+          remove_field => [ "TCProperties" ]
+        }
+
+        ruby  {
+          code => '
+            
+            # begin 
+
+            r = event.get("[NodePath]")
+            if (r.to_s.scan("/").count > 0 && r !=nil )
+              paths = r.split("/").reject {|s| s.empty? }
+
+              t = paths.delete_if { |component| component.empty? }
+              event.set("[ComponentFolders]", t)
+
+              tags = event.get("[tags]")
+              tags = [] if tags.nil?
+              t.each{|x| tags << x }
+              event.set("[tags]", tags)
+
+              t.each {|x| 
+                event.set("[Folder]", x)
+              } 
+              
+              folder = r[/^(.*)(\/.*?)$/, 1]
+              event.set("[Folder]", folder)
+
+            end
+
+            # rescue
+            # end
+          '}
+
+        ruby {
+          code => '
+            t = Time.at(event.get("@timestamp").to_f)
+            suffix = t.strftime("%Y%m%d%H%M%S")
+            event.set("[@metadata][id_suffix]", suffix)
+
+            suffix = t.strftime("%Y-%m")
+            # suffix = ("-" + suffix + "-%{[Workspace]}").downcase
+            event.set("[@metadata][index_suffix]", "-" + suffix)
+          '
+        }
+
+        # Raw index prefis output
+        if "raw" in [tags] {
+          mutate {
+            update => { "[@metadata][index_prefix]" => "raw-%{[@metadata][index_prefix]}" }
+          }
+        }         
+        
+        
+        if [TQL] and [Group] {
+          # Is q TQL result - don't set an id for it - let it autogneerate
+
+          mutate {
+            add_tag => [ "healthcheck" ]
+            # Write to healthcheckindiex
+            update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
+          }
+
+        } else if "date-unknown" in [tags] {
+          # Update the _id if it has a known date associated with it. OTherwisee
+          mutate {
+            update => { "_id" => "%{UniqueId}" }
+          }
+        } else {
+          mutate {
+            update => { "_id" => "%{UniqueId}-%{[@metadata][id_suffix]}" }
+          }
+        }
+
+        # Some final cleanup
+        mutate {
+          remove_tag => [ "beats_input_raw_event", "ComponentFolders" ]
+          # remove_field => [ "other" ]
+        }
+
+      }
+    }
+
+  03_output_tosca.conf: |
+    output { pipeline { send_to => ["30-output-common"] } }
