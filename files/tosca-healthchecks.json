@@ -1,4 +1,4 @@
-// POST _template/tosca-healthcheck
+PUT   _template/tosca-healthcheck
 {
     "order": 0,
     "index_patterns": [
@@ -28,19 +28,19 @@
         ],
         "date_detection": true,
         "properties": {
-            "Description": {
+            "description": {
                 "type": "text"
             },
-            "Name": {
+            "name": {
                 "type": "keyword"
             },
             "@timestamp": {
                 "type": "date"
             },
-            "StartTime": {
+            "start-time": {
                 "type": "date"
             },
-            "EndTime": {
+            "end-time": {
                 "type": "date"
             },
             "tags": {

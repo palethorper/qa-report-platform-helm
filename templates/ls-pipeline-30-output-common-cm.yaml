@@ -21,9 +21,9 @@ data:
         stdout { codec  => rubydebug { metadata => true } }
       } # else 
       
-      if [Product] =~ "Tosca" {
+      if [product] =~ "Tosca" {
 
-        if [UniqueId] {
+        if [unique-id] {
         
           opensearch {
             codec => json
@@ -38,7 +38,7 @@ data:
             
             # action => "create"
 
-            document_id => "%{UniqueId}-%{[@metadata][id_suffix]}"
+            document_id => "%{unique-id}-%{[@metadata][id_suffix]}"
           }
 
         } else {

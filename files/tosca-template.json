@@ -1,4 +1,4 @@
-// POST _template/tosca-template
+PUT _template/tosca-template
 {
     "order": 1,
     "index_patterns": [
@@ -19,10 +19,10 @@
                 "uniqueids_as_keywords": {
                     "match_mapping_type": "*",
                     "path_match": [
-                        "*UniqueId.*",
-                        "*.UniqueId",
-                        "*ParentSurrogateNum*",
-                        "ParentSurrogateNum"
+                        "*unique-id.*",
+                        "*.unique-id",
+                        "*parent-surrogate-num*",
+                        "parent-surrogate-num"
                     ],
                     "mapping": {
                         "type": "keyword"
@@ -33,10 +33,10 @@
                 "date_matches": {
                     "match_mapping_type": "*",
                     "path_match": [
-                        "*StartTime*",
-                        "*EndTime*",
-                        "*CreatedAt*",
-                        "*ModifiedAt*"
+                        "*start-time*",
+                        "*end-time*",
+                        "*created-at*",
+                        "*modified-at*"
                     ],
                     "mapping": {
                         "type": "date"
@@ -55,43 +55,43 @@
         ],
         "date_detection": true,
         "properties": {
-            "LogInfo": {
+            "log-info": {
                 "type": "text"
             },
-            "AggregatedDescription": {
+            "aggregated-description": {
                 "type": "text"
             },
-            "Description": {
+            "description": {
                 "type": "text"
             },
-            "Name": {
+            "name": {
                 "type": "keyword"
             },
             "@timestamp": {
                 "type": "date"
             },
-            "StartTime": {
+            "start-time": {
                 "type": "date"
             },
-            "EndTime": {
+            "end-time": {
                 "type": "date"
             },
             "index_prefix": {
                 "type": "keyword"
             },
-            "ParentSurrogateNum": {
+            "parent-surrogate-num": {
                 "type": "keyword"
             },
-            "UniqueId": {
+            "unique-id": {
                 "type": "keyword"
             },
-            "ExecutionListUniqueId": {
+            "execution-list-unique-id": {
                 "type": "keyword"
             },
-            "TestCaseUniqueId": {
+            "test-case-unique-id": {
                 "type": "keyword"
             },
-            "Folder": {
+            "folder": {
                 "type": "text",
                 "fields": {
                     "raw": {
@@ -100,65 +100,65 @@
                     }
                 }
             },
-            "ErrorMessages": {
+            "error-messages": {
                 "type": "text"
             },
             "tags": {
                 "type": "keyword"
             },
-            "ExecutionListEntryUniqueId": {
+            "execution-list-entry-unique-id": {
                 "type": "keyword"
             },
-            "ExecutionEntry": {
+            "execution-entry": {
                 "properties": {
-                    "CreatedAt": {
+                    "created-at": {
                         "type": "date"
                     },
-                    "ExecutionTestCaseLogExecutionSessionId": {
+                    "execution-test-case-log-execution-session-id": {
                         "type": "keyword"
                     },
-                    "ExecutionTestCaseLogUniqueId": {
+                    "execution-test-case-log-unique-id": {
                         "type": "keyword"
                     },
-                    "ModifiedAt": {
+                    "modified-at": {
                         "type": "date"
                     },
-                    "ParentSurrogateNum": {
+                    "parent-surrogate-mum": {
                         "type": "keyword"
                     },
-                    "UniqueId": {
+                    "unique-id": {
                         "type": "keyword"
                     }
                 }
             },
-            "ExecutionList": {
+            "execution-list": {
                 "properties": {
-                    "CreatedAt": {
+                    "created-at": {
                         "type": "date"
                     },
                 
-                    "ModifiedAt": {
+                    "modified-at": {
                         "type": "date"
                     },
-                    "ParentSurrogateNum": {
+                    "parent-surrogate-num": {
                         "type": "keyword"
                     },
-                    "ProjectId": {
+                    "project-id": {
                         "type": "keyword"
                     },
-                    "Properties": {
+                    "properties": {
                         "properties": {
-                            "Name": {
+                            "name": {
                                 "type": "keyword",
                                 "ignore_above": 512
                             },
-                            "Value": {
+                            "value": {
                                 "type": "keyword",
                                 "ignore_above": 512
                             }
                         }
                     },
-                    "UniqueId": {
+                    "unique-id": {
                         "type": "keyword"
                     }
                 }

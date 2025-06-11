@@ -25,43 +25,51 @@ data:
         copy => { "[host][ip]" => "[source][ip]" }
       }
 
-      if [@metadata][input][http][request][headers][content_type] =~ "xml" {
 
-          # Try to determine the type
-          ruby {
-            code => '
+      if "nunit" in [@metadata][input][http][request][headers][tags] {
 
-              # # event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
-              
-              # require "nokogiri"
-              # require "json"
+        mutate {
+          add_field => { "[@metadata][index_prefix]" => "nunit" }
+          # lowercase => [ "[@metadata][index_prefix]" ]
+          # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
+        }
 
-              # xml_raw = event.get("[message]")
-              # doc = Nokogiri::XML(xml_raw)
 
-              # def detect_nunit_version(doc)
+        # Try to determine the type
+        ruby {
+          code => '
 
-              #   if doc.at_xpath("//test-results")
-              #     return "NUnit 2"
-              #   elsif doc.at_xpath("//test-run")
-              #     engine_version = doc.at_xpath("//test-run/@engine-version")&.value
-              #     framework_version = doc.at_xpath("//environment/@framework-version")&.value
+            # # event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+            
+            # require "nokogiri"
+            # require "json"
 
-              #     if engine_version&.start_with?("4.") || framework_version&.start_with?("4.")
-              #       return "NUnit 4"
-              #     else
-              #       return "NUnit 3"
-              #     end
-              #   else
-              #     return nil
-              #   end
-              # end
+            # xml_raw = event.get("[message]")
+            # doc = Nokogiri::XML(xml_raw)
 
-              # # Add detected version of nunit to tags
-              # tags = event.get("[tags]")
-              # tags << detect_nunit_version(doc)
-              # event.set("[tags]", tags.uniq)
-          '}
+            # def detect_nunit_version(doc)
+
+            #   if doc.at_xpath("//test-results")
+            #     return "NUnit 2"
+            #   elsif doc.at_xpath("//test-run")
+            #     engine_version = doc.at_xpath("//test-run/@engine-version")&.value
+            #     framework_version = doc.at_xpath("//environment/@framework-version")&.value
+
+            #     if engine_version&.start_with?("4.") || framework_version&.start_with?("4.")
+            #       return "NUnit 4"
+            #     else
+            #       return "NUnit 3"
+            #     end
+            #   else
+            #     return nil
+            #   end
+            # end
+
+            # # Add detected version of nunit to tags
+            # tags = event.get("[tags]")
+            # tags << detect_nunit_version(doc)
+            # event.set("[tags]", tags.uniq)
+        '}
 
       }
       
@@ -175,18 +183,6 @@ data:
 
               event.remove("[message]")
               event.remove("[event][original]")
-            '
-          }
-
-
-          ruby {
-            code => '
-              t = Time.at(event.get("@timestamp").to_f)
-              suffix = t.strftime("%Y%m%d%H%M%S")
-              event.set("[@metadata][id_suffix]", suffix)
-
-              suffix = t.strftime("%Y-%m")
-              event.set("[@metadata][index_suffix]", "-" + suffix)
             '
           }
 

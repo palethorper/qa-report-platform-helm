@@ -265,7 +265,7 @@ data:
         }         
         
         
-        if [TQL] and [Group] {
+        if [tql] and [group] {
           # Is q TQL result - don't set an id for it - let it autogneerate
 
           mutate {
@@ -277,21 +277,22 @@ data:
         } else if "date-unknown" in [tags] {
           # Update the _id if it has a known date associated with it. OTherwisee
           mutate {
-            update => { "_id" => "%{UniqueId}" }
+            update => { "_id" => "%{unique-id}" }
           }
         } else {
           mutate {
-            update => { "_id" => "%{UniqueId}-%{[@metadata][id_suffix]}" }
+            update => { "_id" => "%{unique-id}-%{[@metadata][id_suffix]}" }
           }
         }
 
         # Some final cleanup
         mutate {
-          remove_tag => [ "beats_input_raw_event", "ComponentFolders" ]
+          remove_tag => [ "beats_input_raw_event", "component-folders" ]
           # remove_field => [ "other" ]
         }
 
         # Converting CamelCase & PascalCase to lowercase. Adding hyphens where lowercase conversion occurs
+        # NB: After this - new field names should be reference - as originals no longer exist
         ruby {
           code => '
             require "json"
@@ -300,7 +301,8 @@ data:
               case obj
               when Hash
                 obj.each_with_object({}) do |(key, value), new_hash|
-                  new_key = key.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
+                  next if key.nil?  # Skip nil keys
+                  new_key = key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
                   new_hash[new_key] = transform_keys(value)
                 end
               when Array
@@ -310,20 +312,26 @@ data:
               end
             end
 
-            # Get full event data from Logstash
-            event_data = event.to_hash
+            # Get full event data
+            event_data = event.to_hash.dup
             
-            # Apply key transformation recursively
+            # Apply transformation recursively
             transformed_data = transform_keys(event_data)
 
-            # Overwrite event with updated field names
-            transformed_data.each { |k, v| event.set(k, v) }
+            # Overwrite event fields with transformed keys and remove originals
+            event_data.each do |orig_key, value|
+              transformed_key = orig_key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
+              if transformed_key != orig_key  # Ensure key was actually modified
+                event.set(transformed_key, value)
+                event.remove(orig_key)  # Remove only if modified
+              end
+            end
           '
         }
 
         # Add a tag for the input type
         mutate {
-          add_tag => [ "input-tosca" ]
+          add_tag => [ "z-ls-input-beats" ]
         }
 
       } else {
