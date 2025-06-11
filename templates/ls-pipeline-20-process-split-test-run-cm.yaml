@@ -17,6 +17,17 @@ data:
           h.each {|k,v| event.set(k,v) } if h
       '}
 
+      ruby {
+        code => '
+          t = Time.at(event.get("@timestamp").to_f)
+          suffix = t.strftime("%Y%m%d%H%M%S")
+          event.set("[@metadata][id_suffix]", suffix)
+
+          suffix = t.strftime("%Y-%m")
+          event.set("[@metadata][index_suffix]", "-" + suffix)
+        '
+      }
+      
     }
 
   30_output_tosca.conf: |

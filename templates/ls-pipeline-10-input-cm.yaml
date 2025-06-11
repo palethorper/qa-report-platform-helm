@@ -291,7 +291,45 @@ data:
           # remove_field => [ "other" ]
         }
 
+        # Converting CamelCase & PascalCase to lowercase. Adding hyphens where lowercase conversion occurs
+        ruby {
+          code => '
+            require "json"
+
+            def transform_keys(obj)
+              case obj
+              when Hash
+                obj.each_with_object({}) do |(key, value), new_hash|
+                  new_key = key.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
+                  new_hash[new_key] = transform_keys(value)
+                end
+              when Array
+                obj.map { |item| transform_keys(item) }
+              else
+                obj
+              end
+            end
+
+            # Get full event data from Logstash
+            event_data = event.to_hash
+            
+            # Apply key transformation recursively
+            transformed_data = transform_keys(event_data)
+
+            # Overwrite event with updated field names
+            transformed_data.each { |k, v| event.set(k, v) }
+          '
+        }
+
+        # Add a tag for the input type
+        mutate {
+          add_tag => [ "input-tosca" ]
+        }
+
+      } else {
+        drop { }
       }
+
     }
 
   03_output_tosca.conf: |

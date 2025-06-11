@@ -71,7 +71,7 @@ data:
   02_filter_01_xml_nunit_v3_v4p.conf: |
     filter {
 
-      if [@metadata][input][http][request][headers][content_type] =~ "xml"
+      if "nunit" in [@metadata][input][http][request][headers][tags]
       {
           # Nunit refactor and output
 
@@ -94,7 +94,7 @@ data:
                 "id" => test_run["id"],
                 "result" => test_run["result"],
                 "label" => test_run["label"],
-                "objecttype" => "test-run",
+                "object-type" => "test-run",
                 "total" => test_run["total"].to_i,
                 "passed" => test_run["passed"].to_i,
                 "failed" => test_run["failed"].to_i,
@@ -102,35 +102,36 @@ data:
                 "inconclusive" => test_run["inconclusive"].to_i,
                 "skipped" => test_run["skipped"].to_i,
                 "asserts" => test_run["asserts"].to_i,
-                "engine_version" => test_run["engine-version"],
-                "clr_version" => test_run["clr-version"],
-                "start_time" => test_run["start-time"].to_s.gsub(" ", "T"),
-                "end_time" => test_run["end-time"].to_s.gsub(" ", "T"),
+                "engine-version" => test_run["engine-version"],
+                "clr-version" => test_run["clr-version"],
+                "start-time" => test_run["start-time"].to_s.gsub(" ", "T"),
+                "end-time" => test_run["end-time"].to_s.gsub(" ", "T"),
                 "duration" => test_run["duration"].to_f,
-                "command_line" => test_run.xpath("command-line/text()").to_s.strip.split("\n")
+                "command-line" => test_run.xpath("command-line/text()").to_s.strip.split("\n")
               }
 
-              # # Extract only Assembly-type test suites with full properties
+              # Extract only Assembly-type test suites with full properties
               # test_suites = doc.xpath("//test-suite[@type=\\'Assembly\\']").map do |suite|
-              #   {
-              #     "id" => suite["id"],
-              #     "name" => suite["name"],
-              #     "result" => suite["result"],
-              #     "objecttype" => "test-suite",
-              #     "start_time" => suite["start-time"].to_s.gsub(" ", "T"),
-              #     "end_time" => suite["end-time"].to_s.gsub(" ", "T"),
-              #     "duration" => suite["duration"].to_f,
-              #     "total" => suite["total"].to_i,
-              #     "passed" => suite["passed"].to_i,
-              #     "failed" => suite["failed"].to_i,
-              #     "inconclusive" => suite["inconclusive"].to_i,
-              #     "warnings" => suite["warnings"].to_i,
-              #     "asserts" => suite["asserts"].to_i,
-              #     "properties" => suite.xpath(".//environment | .//settings/setting | .//properties/property").map do |prop|
-              #       prop["name"] ? { "name" => prop["name"], "value" => prop["value"] } : nil
-              #     end.compact
-              #   }
-              # end
+              test_suites = doc.xpath("//test-suite]").map do |suite|
+                {
+                  "id" => suite["id"],
+                  "name" => suite["name"],
+                  "result" => suite["result"],
+                  "object-type" => "test-suite",
+                  "start-time" => suite["start-time"].to_s.gsub(" ", "T"),
+                  "end-time" => suite["end-time"].to_s.gsub(" ", "T"),
+                  "duration" => suite["duration"].to_f,
+                  "total" => suite["total"].to_i,
+                  "passed" => suite["passed"].to_i,
+                  "failed" => suite["failed"].to_i,
+                  "inconclusive" => suite["inconclusive"].to_i,
+                  "warnings" => suite["warnings"].to_i,
+                  "asserts" => suite["asserts"].to_i,
+                  "properties" => suite.xpath(".//environment | .//settings/setting | .//properties/property").map do |prop|
+                    prop["name"] ? { "name" => prop["name"], "value" => prop["value"] } : nil
+                  end.compact
+                }
+              end
 
               # Extract Test Cases while ensuring correct TestSuite ID assignment
               test_cases = doc.xpath("//test-case").map do |test|
@@ -138,14 +139,14 @@ data:
                   "id" => test["id"],
                   "name" => test["name"],
                   "classname" => test["classname"],
-                  "objecttype" => "test-case",
+                  "object-type" => "test-case",
                   "result" => test["result"],
-                  "start_time" => test["start-time"].to_s.gsub(" ", "T"),
-                  "end_time" => test["end-time"].to_s.gsub(" ", "T"),
+                  "start-time" => test["start-time"].to_s.gsub(" ", "T"),
+                  "end-time" => test["end-time"].to_s.gsub(" ", "T"),
                   "duration" => test["duration"].to_f,
                   "asserts" => test["asserts"].to_i,
-                  "testSuiteId" => test.ancestors("test-suite").find { |suite| suite["type"] == "Assembly" }&.[]("id"),
-                  "testRunId" => test_run["id"],
+                  "test-suite-id" => test.ancestors("test-suite").find { |suite| suite["type"] == "Assembly" }&.[]("id"),
+                  "test-run-id" => test_run["id"],
                   "assembly" => {
                     "id" => test.ancestors("test-suite[@type=\\'Assembly\\']").first&.[]("id"),
                     "name" => test.ancestors("test-suite[@type=\\'Assembly\\']").first&.[]("name"),
@@ -164,14 +165,9 @@ data:
                     test["name"]
                   ],
                   "messages" => test.xpath(".//reason/message | .//assertion/message").map { |msg| msg.text.strip if msg.text }.compact,
-                  "stackTraces" => test.xpath(".//assertion/stack-trace").map { |trace| trace.text.strip if trace.text }.compact
+                  "stack-traces" => test.xpath(".//assertion/stack-trace").map { |trace| trace.text.strip if trace.text }.compact
                 }
               end
-
-
-              # xml_reformatted = {
-              #   "testRun" => test_run_data
-              # }
 
               event.set("[test-run]",[test_run_data])
               # event.set("[test-suites]",test_suites)
@@ -182,29 +178,21 @@ data:
             '
           }
 
-          # xml {
-          #   remove_namespaces => true
-          # 	source => "xml_reformatted"
-          # 	store_xml => true
-          # 	target => "_xml"
-          # 	force_array => false
-          # 	# max_lines => 50000
-          # }
 
-          # # split { field => "[test-run]" }
-          # split { field => "[test-cases]" }
+          ruby {
+            code => '
+              t = Time.at(event.get("@timestamp").to_f)
+              suffix = t.strftime("%Y%m%d%H%M%S")
+              event.set("[@metadata][id_suffix]", suffix)
 
+              suffix = t.strftime("%Y-%m")
+              event.set("[@metadata][index_suffix]", "-" + suffix)
+            '
+          }
 
-          # ruby  {
-          #   code => '
-          #     # h = event.get("[test-cases]")
-          #     # h.each {|k,v| event[k] = v } if !h.nil?
-          #     # event.remove("[test-cases]")
-
-          #     # h = event.get("[test-run]")
-          #     # h.each {|k,v| event[k] = v } # if !h.nil?
-          #     # event.remove("[test-run]")
-          # '}
+          mutate {
+            update => { "[@metadata][index_prefix]" => "nunit" }
+          }
 
       }
 
