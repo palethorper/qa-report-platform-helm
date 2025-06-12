@@ -110,28 +110,28 @@ data:
                 "command-line" => test_run.xpath("command-line/text()").to_s.strip.split("\n")
               }
 
-              # Extract only Assembly-type test suites with full properties
-              # test_suites = doc.xpath("//test-suite[@type=\\'Assembly\\']").map do |suite|
-              test_suites = doc.xpath("//test-suite]").map do |suite|
-                {
-                  "id" => suite["id"],
-                  "name" => suite["name"],
-                  "result" => suite["result"],
-                  "object-type" => "test-suite",
-                  "start-time" => suite["start-time"].to_s.gsub(" ", "T"),
-                  "end-time" => suite["end-time"].to_s.gsub(" ", "T"),
-                  "duration" => suite["duration"].to_f,
-                  "total" => suite["total"].to_i,
-                  "passed" => suite["passed"].to_i,
-                  "failed" => suite["failed"].to_i,
-                  "inconclusive" => suite["inconclusive"].to_i,
-                  "warnings" => suite["warnings"].to_i,
-                  "asserts" => suite["asserts"].to_i,
-                  "properties" => suite.xpath(".//environment | .//settings/setting | .//properties/property").map do |prop|
-                    prop["name"] ? { "name" => prop["name"], "value" => prop["value"] } : nil
-                  end.compact
-                }
-              end
+              # # Extract only Assembly-type test suites with full properties
+              # # test_suites = doc.xpath("//test-suite[@type=\\'Assembly\\']").map do |suite|
+              # test_suites = doc.xpath("//test-suite]").map do |suite|
+              #   {
+              #     "id" => suite["id"],
+              #     "name" => suite["name"],
+              #     "result" => suite["result"],
+              #     "object-type" => "test-suite",
+              #     "start-time" => suite["start-time"].to_s.gsub(" ", "T"),
+              #     "end-time" => suite["end-time"].to_s.gsub(" ", "T"),
+              #     "duration" => suite["duration"].to_f,
+              #     "total" => suite["total"].to_i,
+              #     "passed" => suite["passed"].to_i,
+              #     "failed" => suite["failed"].to_i,
+              #     "inconclusive" => suite["inconclusive"].to_i,
+              #     "warnings" => suite["warnings"].to_i,
+              #     "asserts" => suite["asserts"].to_i,
+              #     "properties" => suite.xpath(".//environment | .//settings/setting | .//properties/property").map do |prop|
+              #       prop["name"] ? { "name" => prop["name"], "value" => prop["value"] } : nil
+              #     end.compact
+              #   }
+              # end
 
               # Extract Test Cases while ensuring correct TestSuite ID assignment
               test_cases = doc.xpath("//test-case").map do |test|
