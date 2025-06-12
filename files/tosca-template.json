@@ -123,7 +123,7 @@ PUT _template/tosca-template
                     "modified-at": {
                         "type": "date"
                     },
-                    "parent-surrogate-mum": {
+                    "parent-surrogate-num": {
                         "type": "keyword"
                     },
                     "unique-id": {

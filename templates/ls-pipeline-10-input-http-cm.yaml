@@ -28,13 +28,6 @@ data:
 
       if "nunit" in [@metadata][input][http][request][headers][tags] {
 
-        mutate {
-          add_field => { "[@metadata][index_prefix]" => "nunit" }
-          # lowercase => [ "[@metadata][index_prefix]" ]
-          # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
-        }
-
-
         # Try to determine the type
         ruby {
           code => '
@@ -79,8 +72,7 @@ data:
   02_filter_01_xml_nunit_v3_v4p.conf: |
     filter {
 
-      if "nunit" in [@metadata][input][http][request][headers][tags]
-      {
+      if "nunit" in [@metadata][input][http][request][headers][tags] {
           # Nunit refactor and output
 
           ruby {

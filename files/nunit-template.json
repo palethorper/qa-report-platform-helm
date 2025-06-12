@@ -1,0 +1,54 @@
+PUT   _template/nunit-template
+{
+    "order": 3,
+    "index_patterns": [
+        "nunit-*",
+        "backup-nunit-*"
+    ],
+    "settings": {
+        "index": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0,
+            "refresh_interval": "5s"
+        }
+    },
+    "mappings": {
+        "numeric_detection": true,
+        "dynamic": true,
+        "dynamic_templates": [
+            {
+                "strings": {
+                    "mapping": {
+                        "ignore_above": 512,
+                        "type": "keyword"
+                    },
+                    "match_mapping_type": "string"
+                }
+            }
+        ],
+        "date_detection": true,
+        "properties": {
+
+            "description": {
+                "type": "text"
+            },
+            "name": {
+                "type": "keyword"
+            },
+            "@timestamp": {
+                "type": "date"
+            },
+            "start-time": {
+                "type": "date"
+            },
+            "end-time": {
+                "type": "date"
+            },
+            "tags": {
+                "type": "keyword"
+            }
+            
+        }
+    },
+    "aliases": {}
+}

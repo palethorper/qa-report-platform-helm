@@ -264,7 +264,45 @@ data:
           }
         }         
         
-        
+        # Converting CamelCase & PascalCase to lowercase. Adding hyphens where lowercase conversion occurs
+        # NB: After this - new field names should be reference - as originals no longer exist
+        ruby {
+          code => '
+            require "json"
+
+            def deep_transform_keys_and_values(obj)
+              case obj
+              when Hash
+                obj.each_with_object({}) do |(key, value), new_hash|
+                  next if key.nil?  # Skip nil keys
+                  new_key = key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase  
+                  new_value = key.to_s == "object-type" ? value.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase : deep_transform_keys_and_values(value)
+                  new_hash[new_key] = new_value
+                end
+              when Array
+                obj.map { |item| deep_transform_keys_and_values(item) }  
+              else
+                obj  
+              end
+            end
+
+            # Get full event data
+            event_data = event.to_hash.dup
+            
+            # Apply transformation recursively
+            transformed_data = deep_transform_keys_and_values(event_data)
+
+            # Explicitly remove **original keys before setting transformed ones**
+            event_data.keys.each do |orig_key|
+              transformed_key = orig_key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
+              if transformed_key != orig_key  # Ensure key was actually modified
+                event.remove(orig_key)  # Remove original before setting the transformed field
+                event.set(transformed_key, transformed_data[transformed_key])
+              end
+            end
+          '
+        }
+
         if [tql] and [group] {
           # Is q TQL result - don't set an id for it - let it autogneerate
 
@@ -289,44 +327,6 @@ data:
         mutate {
           remove_tag => [ "beats_input_raw_event", "component-folders" ]
           # remove_field => [ "other" ]
-        }
-
-        # Converting CamelCase & PascalCase to lowercase. Adding hyphens where lowercase conversion occurs
-        # NB: After this - new field names should be reference - as originals no longer exist
-        ruby {
-          code => '
-            require "json"
-
-            def transform_keys(obj)
-              case obj
-              when Hash
-                obj.each_with_object({}) do |(key, value), new_hash|
-                  next if key.nil?  # Skip nil keys
-                  new_key = key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
-                  new_hash[new_key] = transform_keys(value)
-                end
-              when Array
-                obj.map { |item| transform_keys(item) }
-              else
-                obj
-              end
-            end
-
-            # Get full event data
-            event_data = event.to_hash.dup
-            
-            # Apply transformation recursively
-            transformed_data = transform_keys(event_data)
-
-            # Overwrite event fields with transformed keys and remove originals
-            event_data.each do |orig_key, value|
-              transformed_key = orig_key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
-              if transformed_key != orig_key  # Ensure key was actually modified
-                event.set(transformed_key, value)
-                event.remove(orig_key)  # Remove only if modified
-              end
-            end
-          '
         }
 
         # Add a tag for the input type
