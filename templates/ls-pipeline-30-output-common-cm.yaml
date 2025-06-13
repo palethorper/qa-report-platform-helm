@@ -9,10 +9,18 @@ data:
     }
 
     filter {
+
+      if [index-override] {
+        mutate {
+          update => { "[@metadata][index_prefix]" => "%{[index-override]}" }
+        }
+      }
+
       mutate {
         merge => { "[tags]" => "[source][tags]"}
-        remove_field => [ "[test-cases]", "[test-run]", "[test-suites]", "[event]", "[url]", "[user_agent]", "[http]", "[host]" ]
+        remove_field => [ "[test-cases]", "[test-run]", "[test-suites]", "[event]", "[url]", "[user_agent]", "[http]", "[host]", "[index-override]" ]
       }
+
     }
 
     output {
@@ -74,4 +82,5 @@ data:
           ssl_certificate_verification => false
         }
       }
+
     }

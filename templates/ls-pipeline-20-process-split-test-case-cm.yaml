@@ -9,7 +9,9 @@ data:
     }
     
     filter {
-      split { field => "[test-cases]" }
+      if [test-cases] {
+        split { field => "[test-cases]" }
+      }
 
       ruby  {
         code => '
