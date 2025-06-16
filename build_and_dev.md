@@ -28,15 +28,18 @@ kubectl apply -f ../../secrets/g0-cr-secret.yaml -n ${NAMESPACE}
 # Local (self-hosted or preminted certs only
 # SSL cert - slf signed for local
 # Create this autopmatically for non-locals
-export CERT_PATH="../../secrets/local-k8s"
-kubectl create secret tls -n ${NAMESPACE} tls-certificate --key ${CERT_PATH}/cert.key --cert ${CERT_PATH}/cert.crt
+export CERT_PATH="../../secrets/self-signed-devlocal"
+kubectl create secret tls -n ${NAMESPACE} tls-certificate --key ${CERT_PATH}/cert.key --cert ${CERT_PATH}/cert.crt  
+
+kubectl create secret generic ca-secret -n ${NAMESPACE} --from-file=tls.crt=${CERT_PATH}/server.crt --from-file=tls.key=${CERT_PATH}/server.key --from-file=ca.crt=${CERT_PATH}/ca-cert.pem
+
 #################################################################3
 
 # kubectl apply -n ${NAMESPACE} -f "../../secrets/azure-blob-storage-secret.yaml"
 
 ## Secrets
 
-kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=OS_PASSWORD=${OS_PASSWORD}
+kubectl create secret generic -n ${NAMESPACE} platform-creds --from-literal=OS_PASSWORD=${OS_PASSWORD} --from-literal=SEND_DATA_USER=${SEND_DATA_USER} --from-literal=SEND_DATA_PASSWORD=${SEND_DATA_PASSWORD}
 
 # kubectl create secret generic -n ${NAMESPACE} message-broker-secret --from-literal=client-passwords=${MB_PASSWORD} --from-literal=inter-broker-password=${MB_PASSWORD} --from-literal=inter-broker-client-secret=${MBPASS} --from-literal=controller-password=${MB_PASSWORD} --from-literal=controller-client-secret=${MB_PASSWORD}
 
@@ -55,51 +58,19 @@ helm upgrade \
     $@
 
 helm uninstall ${RELEASE} -n ${NAMESPACE}
-
-# Post inital deployment - Esure
-#  - DNS entreis are create for 
+```
 
 
-# Install 
-# helm install \
-#     --create-namespace \
-#     ${RELEASE} ${INSTALL_FROM} \
-#     -n ${NAMESPACE} \
-#     -f ${VALUES} \
-#     --set global.ospassword=${OS_PASSWORD} \
-#     --set global.hostname=${QAIENV_HOSTNAME} \
-#     $@
+----
+## Notes
 
-# #######################
+https://medium.com/@yago82/secure-communication-setup-ssl-certificates-for-logstash-and-filebeat-with-openssl-bc1c7827ee3b
 
-# ```
+----
 
-# ```powershell
-# $namespace='g0-auth-enabled'
-# $release='qarp-2'
-# $ospassword='' # Sample password for testing - do not use this  for prod deploys 
+```sh
+# Post to https endpoint (full file)
+curl -k -vvv https://devlocal.groundzero.solutions:50000 -X POST -H "Content-Type: application/xml"  --cacert ../../secrets/self-signed-devlocal/ca-cert.pem -H "Tags: nunit,selenium" --data @nunit3-results.xml -u "${SEND_DATA_USER}:${SEND_DATA_PASSWORD}"
+```
 
-# kubectl create namespace $namespace
-# kubectl create secret generic -n $namespace platform-creds --from-literal=OS_PASSWORD=$ospassword
-
-# helm install $release . -n $namespace --create-namespace -f values.yaml
-
-# helm upgrade --install --create-namespace $release . -n $namespace -f values.yaml
-
-# helm uninstall $release -n $namespace 
-
-# curl -k -vvv https://localhost:9200/ -u 'admin:Test@Password01'
-
-# ```
-
-# ## Some useful commands
-
-# ```sh
-
-# # Connect to container example
-# kubectl exec -i -t -n ${TESTNS} consul-server-0 -c consul "--" sh -c "clear; sh"
-
-# kubectl port-forward svc/consul-ui -n ${TESTNS} 8080:80
-# kubectl port-forward svc/sl3-fabric-vault-ui -n ${TESTNS} 8200:8200
-
-# ```
+dfd

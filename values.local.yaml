@@ -102,7 +102,7 @@ logstash:
   extraVolumes:
     - name: certificates-vol
       secret:
-        secretName: tls-certificate
+        secretName: ca-secret
 
     - name: ls-pipeline-10-input
       configMap:
@@ -472,7 +472,7 @@ rabbitmq:
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
 
 kafka:
-  install: false
+  install: true
   
   clusterId: "kafka-cluster"
   replicaCount: 1
@@ -490,6 +490,10 @@ kafka:
 
   # # sasl.controller.user[0]: inter_broker_user
   # sasl.controller.password: *msgbrokerPassword
+
+  tls:
+    type: PEM
+    existingSecret: tls-certificate
 
   controller:
     replicaCount: 1
@@ -518,17 +522,17 @@ strimzi-kafka-operator:
   replicas: 1
 
 kafka-ui:
-  install: false
+  install: true
 
   env:
     - name: DYNAMIC_CONFIG_ENABLED
       value: "true"
 
   yamlApplicationConfig:
-    kafka:
-      clusters:
-        - name: qai1-kafka
-          bootstrapServers:  qai1-kafka:9092
+    # kafka:
+    #   clusters:
+    #     - name: qai1-kafka
+    #       bootstrapServers:  qai1-kafka:9092
     auth:
       type: disabled
 

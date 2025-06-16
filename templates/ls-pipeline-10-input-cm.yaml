@@ -7,6 +7,11 @@ data:
     input {
       beats {
         port => 5044
+        ssl_enabled => true
+        ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
+        ssl_certificate => "/usr/share/logstash/certs/tls.crt"
+        ssl_key => "/usr/share/logstash/certs/tls.key"
+        # ssl_verify_mode => "force_peer"
       }
     }
     
@@ -341,4 +346,9 @@ data:
     }
 
   03_output_tosca.conf: |
-    output { pipeline { send_to => ["30-output-common"] } }
+    output {
+      pipeline {
+        send_to => ["30-output-common"]
+        # enable_metric => false
+      }
+    }
