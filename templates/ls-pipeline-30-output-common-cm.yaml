@@ -65,6 +65,21 @@ data:
           }
 
         }
+      } else if "nunit" in [@metadata][input][http][request][headers][tags]  {
+
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "nunit-%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            # action => "create"
+          }
 
       } else {
 
