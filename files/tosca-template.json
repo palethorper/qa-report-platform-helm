@@ -2,7 +2,8 @@ PUT _template/tosca-template
 {
     "order": 1,
     "index_patterns": [
-        "tosca-*"
+        "tosca-*",
+        "backup-tosca"
     ],
     "settings": {
         "index": {
@@ -15,6 +16,29 @@ PUT _template/tosca-template
         "numeric_detection": true,
         "dynamic": true,
         "dynamic_templates": [
+            {
+                "properties_as_keywords": {
+                    "match_mapping_type": "*",
+                    "path_match": [
+                        "properties.name",
+                        "properties.value",
+                        "test-case-execution-log.properties.name",
+                        "test-case-execution-log.properties.value",
+                        "test-case.properties.name",
+                        "test-case.properties.value",
+                        "execution-entry.properties.name",
+                        "execution-entry.properties.value",
+                        "execution-list.properties.name",
+                        "execution-list.properties.value",
+                        "*.properties.name",
+                        "*.properties.value"
+                    ],
+                    "mapping": {
+                        "type": "keyword",
+                        "ignore_above": 512
+                    }
+                }
+            },
             {
                 "uniqueids_as_keywords": {
                     "match_mapping_type": "*",
@@ -52,6 +76,7 @@ PUT _template/tosca-template
                     "match_mapping_type": "string"
                 }
             }
+
         ],
         "date_detection": true,
         "properties": {

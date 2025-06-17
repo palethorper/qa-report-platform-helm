@@ -1,6 +1,6 @@
 PUT   _template/tosca-healthcheck
 {
-    "order": 0,
+    "order": 5,
     "index_patterns": [
         "tosca*healthcheck*",
         "backup-*healthcheck*"
