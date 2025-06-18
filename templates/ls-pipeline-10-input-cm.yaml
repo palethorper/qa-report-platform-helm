@@ -35,9 +35,8 @@ data:
         # }
 
         mutate {
-          add_field => { "[@metadata][index_prefix]" => "%{Product}-%{CustCode}" }
+          add_field => { "[@metadata][index_prefix]" => "%{Product}-" }
           lowercase => [ "[@metadata][index_prefix]" ]
-          # add_field => { "[index_prefix]" => "%{[@metadata][index_prefix]}" }
           add_field => { "eventtime"=> "%{@timestamp}" }
         }
 
@@ -56,11 +55,6 @@ data:
                 v.gsub!(/^false$/i,"false") if !v.nil?
                 event.set(k,v)
               }
-            end
-
-            # Keep metadata
-            if tags.include?("debug") then
-              event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
             end
 
             event.remove("_xml")
@@ -260,7 +254,6 @@ data:
             event.set("[@metadata][id_suffix]", suffix)
 
             suffix = t.strftime("%Y-%m")
-            # suffix = ("-" + suffix + "-%{[Workspace]}").downcase
             event.set("[@metadata][index_suffix]", "-" + suffix)
           '
         }
@@ -316,30 +309,31 @@ data:
 
           mutate {
             add_tag => [ "healthcheck" ]
-            # Write to healthcheckindiex
             update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
           }
 
-        } else if "date-unknown" in [tags] {
-          # Update the _id if it has a known date associated with it. OTherwisee
-          mutate {
-            update => { "_id" => "%{unique-id}" }
-          }
-        } else {
-          mutate {
-            update => { "_id" => "%{unique-id}-%{[@metadata][id_suffix]}" }
-          }
+        } 
+        
+        # else if "date-unknown" in [tags] {
+        #   # Update the _id if it has a known date associated with it. OTherwisee
+        #   mutate {
+        #     update => { "_id" => "%{unique-id}" }
+        #   }
+        # } else {
+        #   mutate {
+        #     update => { "_id" => "%{unique-id}-%{[@metadata][id_suffix]}" }
+        #   }
+        # }
+
+        # Add a tag for the input type
+        mutate {
+          add_tag => [ "z-ls-input-beats" ]
         }
 
         # Some final cleanup
         mutate {
           remove_tag => [ "beats_input_raw_event", "component-folders" ]
           # remove_field => [ "other" ]
-        }
-
-        # Add a tag for the input type
-        mutate {
-          add_tag => [ "z-ls-input-beats" ]
         }
 
       } else {
