@@ -10,6 +10,15 @@ data:
 
     filter {
 
+      ruby {
+        code => '
+          # Keep metadata
+          if tags.include?("debug") then
+            event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+          end unless tags.nil?
+        '
+      }
+
       if [index-override] {
         mutate {
           update => { "[@metadata][index_prefix]" => "%{[index-override]}" }
@@ -27,11 +36,11 @@ data:
 
       if "debug" in [tags] {
         stdout { codec  => rubydebug { metadata => true } }
-      } # else 
+      }
       
       if [product] =~ "Tosca" {
 
-        if [unique-id] {
+        if [@metadata][id] {
         
           opensearch {
             codec => json
@@ -46,7 +55,7 @@ data:
             
             # action => "create"
 
-            document_id => "%{unique-id}-%{[@metadata][id_suffix]}"
+            document_id => "%{[@metadata][id]}"
           }
 
         } else {
@@ -54,7 +63,7 @@ data:
             codec => json
 
             hosts => ["https://opensearch-cluster-master:9200"]
-            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+            index => "%{[@metadata][index_prefix]}-dyn-id"
 
             user => "admin"
             password => "${OS_PASSWORD}"

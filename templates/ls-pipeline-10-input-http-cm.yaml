@@ -8,14 +8,17 @@ data:
       http {
         port => 50000
         response_code => 200
-        ssl_enabled => true
-        ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
-        ssl_certificate => "/usr/share/logstash/certs/tls.crt"
-        ssl_key => "/usr/share/logstash/certs/tls.key"
-        ssl_client_authentication => "optional"
 
         user => "${SEND_DATA_USER}"
         password => "${SEND_DATA_PASSWORD}"
+
+        ssl_enabled => false
+
+        # ssl_enabled => true
+        # ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
+        # ssl_certificate => "/usr/share/logstash/certs/tls.crt"
+        # ssl_key => "/usr/share/logstash/certs/tls.key"
+        # ssl_client_authentication => "optional"
       }
     }
     

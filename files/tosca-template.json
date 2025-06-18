@@ -30,6 +30,8 @@ PUT _template/tosca-template
                         "execution-entry.properties.value",
                         "execution-list.properties.name",
                         "execution-list.properties.value",
+                        "execution-log.properties.name",
+                        "execution-log.properties.value",
                         "*.properties.name",
                         "*.properties.value"
                     ],
@@ -146,6 +148,41 @@ PUT _template/tosca-template
                         "type": "keyword"
                     },
                     "modified-at": {
+                        "type": "date"
+                    },
+                    "parent-surrogate-num": {
+                        "type": "keyword"
+                    },
+                    "unique-id": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "test-case": {
+                "properties": {
+                    "created-at": {
+                        "type": "date"
+                    },
+                    "modified-at": {
+                        "type": "date"
+                    },
+                    "parent-surrogate-num": {
+                        "type": "keyword"
+                    },
+                    "unique-id": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "execution-log": {
+                "properties": {
+                    "created-at": {
+                        "type": "date"
+                    },
+                    "modified-at": {
+                        "type": "date"
+                    },
+                    "start-time": {
                         "type": "date"
                     },
                     "parent-surrogate-num": {
