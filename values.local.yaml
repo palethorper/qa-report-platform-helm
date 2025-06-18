@@ -372,7 +372,7 @@ opensearch-dashboards:
           defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
           darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
         faviconUrl: ""
-        applicationTitle: "QAI (by GroundZero)"
+        applicationTitle: "QAI"
 
       # securityAnalyticsDashboards.enabled: false
       # traceAnalyticsDashboards.enabled: false
@@ -472,7 +472,7 @@ rabbitmq:
       nginx.ingress.kubernetes.io/whitelist-source-range: *ipwhiteliststring
 
 kafka:
-  install: true
+  install: false
   
   clusterId: "kafka-cluster"
   replicaCount: 1
@@ -522,7 +522,7 @@ strimzi-kafka-operator:
   replicas: 1
 
 kafka-ui:
-  install: true
+  install: false
 
   env:
     - name: DYNAMIC_CONFIG_ENABLED
