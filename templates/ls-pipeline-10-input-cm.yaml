@@ -300,6 +300,41 @@ data:
           '
         }
 
+        ruby {
+          code => '
+            require "digest"
+
+            # Recursively flatten values, skipping excluded keys
+            def flatten_values(obj, exclude_keys)
+              result = []
+
+              case obj
+              when Hash
+                obj.each do |k, v|
+                  next if exclude_keys.include?(k)
+                  result.concat(flatten_values(v, exclude_keys))
+                end
+              when Array
+                obj.each { |v| result.concat(flatten_values(v, exclude_keys)) }
+              else
+                result << obj.to_s
+              end
+
+              result
+            end
+
+            # Customize keys to exclude from hash input
+            exclude_keys = ["log", "@timestamp", "@version", "eventtime", "agent", "_id"]
+
+            flattened = flatten_values(event.to_hash, exclude_keys).compact
+            concatenated = flattened.join("|")
+            object_hash = Digest::SHA256.hexdigest(concatenated)
+
+            event.set("flattened", flattened)
+            event.set("object-hash", object_hash)
+          '
+        }
+
         if [tql] and [group] {
           # Is q TQL result - don't set an id for it - let it autogneerate
 

@@ -85,6 +85,12 @@ PUT _template/tosca-template
             "log-info": {
                 "type": "text"
             },
+            "object-hash": {
+                "type": "keyword"
+            },
+            "flattened": {
+                "type": "text"
+            },
             "aggregated-description": {
                 "type": "text"
             },

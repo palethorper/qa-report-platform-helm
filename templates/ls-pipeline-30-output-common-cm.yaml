@@ -13,7 +13,7 @@ data:
       ruby {
         code => '
           # Keep metadata
-          if tags.include?("debug") then
+          if tags.include?("debug") || tags.include?("metadata-keep") then
             event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
           end unless tags.nil?
         '
