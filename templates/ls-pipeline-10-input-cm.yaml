@@ -268,25 +268,16 @@ data:
         # Converting CamelCase & PascalCase to lowercase. Adding hyphens where lowercase conversion occurs
         # NB: After this - new field names should be reference - as originals no longer exist
         ruby {
-          code => "
-            require \"json\"
-
+          init => '
             def deep_transform_keys_and_values(obj)
               case obj
               when Hash
                 obj.each_with_object({}) do |(key, value), result|
                   next if key.nil?
-
-                  # Normalize the key
-                  normalized_key = key.to_s.gsub(/([a-z])([A-Z])/, \"\\1-\\2\").downcase
-
-                  # Decide how to transform the value
-                  if normalized_key == \"object-type\" && value.is_a?(String)
-                    normalized_value = value.gsub(/([a-z])([A-Z])/, \"\\1-\\2\").downcase
-                  else
-                    normalized_value = deep_transform_keys_and_values(value)
-                  end
-
+                  normalized_key = key.to_s.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase
+                  normalized_value = (normalized_key == "object-type" && value.is_a?(String)) ?
+                    value.gsub(/([a-z])([A-Z])/, "\\1-\\2").downcase :
+                    deep_transform_keys_and_values(value)
                   result[normalized_key] = normalized_value
                 end
               when Array
@@ -295,24 +286,18 @@ data:
                 obj
               end
             end
-
-            # Preserve essential ECS/system metadata
-            preserve_keys = [\"@timestamp\", \"@version\", \"agent\", \"ecs\", \"log\"]
+          '
+          code => '
+            preserve_keys = ["@timestamp", "@version", "agent", "ecs", "log"]
             preserved_data = {}
-            preserve_keys.each do |key|
-              preserved_data[key] = event.get(key) if event.include?(key)
-            end
+            preserve_keys.each { |key| preserved_data[key] = event.get(key) if event.include?(key) }
 
-            # Apply transformation
             transformed = deep_transform_keys_and_values(event.to_hash)
 
-            # Clear and replace all fields
             event.to_hash.keys.each { |k| event.remove(k) }
             transformed.each { |k, v| event.set(k, v) }
-
-            # Reapply preserved metadata
             preserved_data.each { |k, v| event.set(k, v) }
-          "
+          '
         }
 
         if [tql] and [group] {
