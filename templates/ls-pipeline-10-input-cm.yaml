@@ -348,9 +348,7 @@ data:
             update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
           }
 
-        } 
-        
-        if [object-type] =~ /test-case|execution-entry|execution-log|execution-list|test-case-execution-log/ {
+        } else if [object-type] =~ /test-case|execution-entry|execution-log|execution-list|test-case-execution-log/ {
           mutate {
             update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
           }

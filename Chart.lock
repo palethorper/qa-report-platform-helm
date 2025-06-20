@@ -10,18 +10,18 @@ dependencies:
   version: 3.0.0
 - name: rabbitmq
   repository: https://charts.bitnami.com/bitnami
-  version: 16.0.5
+  version: 16.0.8
 - name: kafka
   repository: https://charts.bitnami.com/bitnami
-  version: 32.2.12
+  version: 32.2.17
 - name: kafka-ui
   repository: https://provectus.github.io/kafka-ui-charts
   version: 0.7.6
 - name: ingress-nginx
   repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.12.2
+  version: 4.12.3
 - name: strimzi-kafka-operator
   repository: https://strimzi.io/charts
   version: 0.46.0
-digest: sha256:b93030a1a0b527e17a8efb3a26666c84225184044af28ac63ca38fcde2fdae76
-generated: "2025-06-04T23:45:06.13909468+10:00"
+digest: sha256:7c0e7d33b441da1828f6102b59406d3763a3fc7ae4c071464291096de6d7ece3
+generated: "2025-06-20T16:09:51.222360818+10:00"
