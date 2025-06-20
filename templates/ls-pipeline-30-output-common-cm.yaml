@@ -8,30 +8,6 @@ data:
       pipeline { address => "30-output-common" }
     }
 
-    filter {
-
-      ruby {
-        code => '
-          # Keep metadata
-          if tags.include?("debug") || tags.include?("metadata-keep") then
-            event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
-          end unless tags.nil?
-        '
-      }
-
-      if [index-override] {
-        mutate {
-          update => { "[@metadata][index_prefix]" => "%{[index-override]}" }
-        }
-      }
-
-      mutate {
-        merge => { "[tags]" => "[source][tags]"}
-        remove_field => [ "[test-cases]", "[test-run]", "[test-suites]", "[event]", "[url]", "[user_agent]", "[http]", "[host]", "[index-override]" ]
-      }
-
-    }
-
     output {
 
       if "debug" in [tags] {
@@ -63,7 +39,7 @@ data:
             codec => json
 
             hosts => ["https://opensearch-cluster-master:9200"]
-            index => "%{[@metadata][index_prefix]}-dyn-id"
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
 
             user => "admin"
             password => "${OS_PASSWORD}"

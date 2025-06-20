@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ls-pipeline-30-final-filter-common-cm
+data:
+  30_common.conf: |
+    input {
+      pipeline { address => "30-final-filter-common" }
+    }
+
+    filter {
+
+      ruby {
+        code => '
+          # Keep metadata
+          if tags.include?("debug") || tags.include?("metadata-keep") then
+            event.get("[@metadata]").each {|k,v| event.set("[meta][#{k}]", v)}
+          end unless tags.nil?
+        '
+      }
+
+      if [index-override] {
+        mutate {
+          update => { "[@metadata][index_prefix]" => "%{[index-override]}" }
+        }
+      }
+
+      mutate {
+        # merge => { "[tags]" => "[source][tags]"}
+        remove_field => [ "[test-cases]", "[test-run]", "[test-suites]", "[event]", "[url]", "[user_agent]", "[http]", "[host]", "[index-override]" ]
+      }
+
+    }
+
+
+  31_output_common.conf: |
+    output {
+      pipeline {
+        send_to => ["30-output-common"]
+        # enable_metric => false
+      }
+    }

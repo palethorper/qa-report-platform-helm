@@ -35,7 +35,7 @@ data:
         # }
 
         mutate {
-          add_field => { "[@metadata][index_prefix]" => "%{Product}-" }
+          add_field => { "[@metadata][index_prefix]" => "%{Product}" }
           lowercase => [ "[@metadata][index_prefix]" ]
           add_field => { "eventtime"=> "%{@timestamp}" }
         }
@@ -324,14 +324,15 @@ data:
             end
 
             # Customize keys to exclude from hash input
-            exclude_keys = ["log", "@timestamp", "@version", "eventtime", "agent", "_id"]
+            exclude_keys = ["log", "@timestamp", "@version", "eventtime", "agent", "_id", "@metadata", "ecs"]
 
-            flattened = flatten_values(event.to_hash, exclude_keys).compact
+            flattened = flatten_values(event.to_hash, exclude_keys).sort.compact
             concatenated = flattened.join("|")
             object_hash = Digest::SHA256.hexdigest(concatenated)
 
-            event.set("flattened", flattened)
-            event.set("object-hash", object_hash)
+            event.set("[flattened]", flattened)
+
+            event.set("[@metadata][id]", object_hash)
           '
         }
 
@@ -345,16 +346,18 @@ data:
 
         } 
         
-        # else if "date-unknown" in [tags] {
-        #   # Update the _id if it has a known date associated with it. OTherwisee
-        #   mutate {
-        #     update => { "_id" => "%{unique-id}" }
-        #   }
-        # } else {
-        #   mutate {
-        #     update => { "_id" => "%{unique-id}-%{[@metadata][id_suffix]}" }
-        #   }
-        # }
+        if [object-type] =~ /test-case|execution-entry|execution-log|execution-list|test-case-execution-log/ {
+          mutate {
+            update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
+          }
+
+        } else {
+          
+          mutate {
+            update => { "[@metadata][id]" => "%{unique-id}" }
+          }
+
+        }
 
         # Add a tag for the input type
         mutate {
@@ -376,7 +379,7 @@ data:
   03_output_tosca.conf: |
     output {
       pipeline {
-        send_to => ["30-output-common"]
+        send_to => ["30-final-filter-common"]
         # enable_metric => false
       }
     }

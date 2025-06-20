@@ -368,7 +368,7 @@ opensearch-dashboards:
           defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
           darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
         faviconUrl: ""
-        applicationTitle: "QAI (by GroundZero)"
+        applicationTitle: "Qualtiva"
 
       # securityAnalyticsDashboards.enabled: false
       # traceAnalyticsDashboards.enabled: false

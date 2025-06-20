@@ -76,14 +76,17 @@ logstash:
       - pipeline.id: http-input
         path.config: /usr/share/logstash/ls-pipeline-10-input-http/*.conf
 
-      - pipeline.id: ls-pipeline-20-process-split-test-case
+      - pipeline.id: 20-process-split-test-case
         path.config: /usr/share/logstash/ls-pipeline-20-process-split-test-case/*.conf
 
-      - pipeline.id: ls-pipeline-20-process-split-test-run
+      - pipeline.id: 20-process-split-test-run
         path.config: /usr/share/logstash/ls-pipeline-20-process-split-test-run/*.conf
 
-      # - pipeline.id: ls-pipeline-20-process-split-test-suite
+      # - pipeline.id: 20-process-split-test-suite
       #   path.config: /usr/share/logstash/ls-pipeline-20-process-split-test-suite/*.conf
+
+      - pipeline.id: final-filter-common
+        path.config: /usr/share/logstash/ls-pipeline-30-final-filter-common/*.conf
 
       - pipeline.id: output-common
         path.config: /usr/share/logstash/ls-pipeline-30-output-common/*.conf
@@ -124,6 +127,10 @@ logstash:
       configMap:
         name: ls-pipeline-20-process-split-test-run-cm
 
+    - name: ls-pipeline-30-final-filter-common
+      configMap:
+        name: ls-pipeline-30-final-filter-common-cm
+
     - name: ls-pipeline-30-output-common
       configMap:
         name: ls-pipeline-30-output-common-cm
@@ -151,6 +158,10 @@ logstash:
 
     - name: ls-pipeline-20-process-split-test-suite
       mountPath: /usr/share/logstash/ls-pipeline-20-process-split-test-suite
+      readOnly: true
+
+    - name: ls-pipeline-30-final-filter-common
+      mountPath: /usr/share/logstash/ls-pipeline-30-final-filter-common
       readOnly: true
 
     - name: ls-pipeline-30-output-common
@@ -274,6 +285,33 @@ opensearch:
       path.repo: ["/usr/share/opensearch/data/snapshots"]
       
 
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Waiting for OpenSearch to be ready..."
+            until curl -s -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200 --insecure; do
+              sleep 5
+            done
+            echo "OpenSearch is up. Running post-start command..."
+            cd /usr/share/opensearch/install-files/
+            curl -XPUT https://localhost:9200/_template/tosca-template -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-template.json
+            curl -XPUT https://localhost:9200/_template/tosca-healthcheck -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-healthchecks.json
+
+
+
+  extraVolumes:
+    - name: install-files
+      configMap:
+        name: opensearch-install-files-cm
+
+  extraVolumeMounts:
+    - name: install-files
+      mountPath: /usr/share/opensearch/install-files/
+      readOnly: false
 
   persistence:
     enabled: true
@@ -372,7 +410,7 @@ opensearch-dashboards:
           defaultUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
           darkModeUrl: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/atom.svg"
         faviconUrl: ""
-        applicationTitle: "QAI"
+        applicationTitle: "AnalytiQa [Qualtiva]"
 
       # securityAnalyticsDashboards.enabled: false
       # traceAnalyticsDashboards.enabled: false
@@ -405,7 +443,7 @@ opensearch-dashboards:
       
 
 rabbitmq:
-  install: true
+  install: false
   image:
     repository: bitnami/rabbitmq
   auth:

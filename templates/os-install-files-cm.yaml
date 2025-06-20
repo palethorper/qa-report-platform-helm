@@ -1,0 +1,298 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-install-files-cm
+data:
+  # PUT _template/tosca-template
+  tosca-template.json: |
+    {
+        "order": 1,
+        "index_patterns": [
+            "tosca-*",
+            "backup-tosca"
+        ],
+        "settings": {
+            "index": {
+                "number_of_shards": 1,
+                "number_of_replicas": 0,
+                "refresh_interval": "5s"
+            }
+        },
+        "mappings": {
+            "numeric_detection": true,
+            "dynamic": true,
+            "dynamic_templates": [
+                {
+                    "properties_as_keywords": {
+                        "match_mapping_type": "*",
+                        "path_match": [
+                            "properties.name",
+                            "properties.value",
+                            "test-case-execution-log.properties.name",
+                            "test-case-execution-log.properties.value",
+                            "test-case.properties.name",
+                            "test-case.properties.value",
+                            "execution-entry.properties.name",
+                            "execution-entry.properties.value",
+                            "execution-list.properties.name",
+                            "execution-list.properties.value",
+                            "execution-log.properties.name",
+                            "execution-log.properties.value",
+                            "*.properties.name",
+                            "*.properties.value"
+                        ],
+                        "mapping": {
+                            "type": "keyword",
+                            "ignore_above": 512
+                        }
+                    }
+                },
+                {
+                    "uniqueids_as_keywords": {
+                        "match_mapping_type": "*",
+                        "path_match": [
+                            "*unique-id.*",
+                            "*.unique-id",
+                            "*parent-surrogate-num*",
+                            "parent-surrogate-num"
+                        ],
+                        "mapping": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                {
+                    "date_matches": {
+                        "match_mapping_type": "*",
+                        "path_match": [
+                            "*start-time*",
+                            "*end-time*",
+                            "*created-at*",
+                            "*modified-at*"
+                        ],
+                        "mapping": {
+                            "type": "date"
+                        }
+                    }
+                },
+                {
+                    "strings": {
+                        "mapping": {
+                            "ignore_above": 512,
+                            "type": "keyword"
+                        },
+                        "match_mapping_type": "string"
+                    }
+                }
+
+            ],
+            "date_detection": true,
+            "properties": {
+                "log-info": {
+                    "type": "text"
+                },
+                "object-hash": {
+                    "type": "keyword"
+                },
+                "flattened": {
+                    "type": "text"
+                },
+                "aggregated-description": {
+                    "type": "text"
+                },
+                "description": {
+                    "type": "text"
+                },
+                "name": {
+                    "type": "keyword"
+                },
+                "@timestamp": {
+                    "type": "date"
+                },
+                "start-time": {
+                    "type": "date"
+                },
+                "end-time": {
+                    "type": "date"
+                },
+                "index_prefix": {
+                    "type": "keyword"
+                },
+                "parent-surrogate-num": {
+                    "type": "keyword"
+                },
+                "unique-id": {
+                    "type": "keyword"
+                },
+                "execution-list-unique-id": {
+                    "type": "keyword"
+                },
+                "test-case-unique-id": {
+                    "type": "keyword"
+                },
+                "folder": {
+                    "type": "text",
+                    "fields": {
+                        "raw": {
+                            "type": "keyword",
+                            "ignore_above": 2048
+                        }
+                    }
+                },
+                "error-messages": {
+                    "type": "text"
+                },
+                "tags": {
+                    "type": "keyword"
+                },
+                "execution-list-entry-unique-id": {
+                    "type": "keyword"
+                },
+                "execution-entry": {
+                    "properties": {
+                        "created-at": {
+                            "type": "date"
+                        },
+                        "execution-test-case-log-execution-session-id": {
+                            "type": "keyword"
+                        },
+                        "execution-test-case-log-unique-id": {
+                            "type": "keyword"
+                        },
+                        "modified-at": {
+                            "type": "date"
+                        },
+                        "parent-surrogate-num": {
+                            "type": "keyword"
+                        },
+                        "unique-id": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                "test-case": {
+                    "properties": {
+                        "created-at": {
+                            "type": "date"
+                        },
+                        "modified-at": {
+                            "type": "date"
+                        },
+                        "parent-surrogate-num": {
+                            "type": "keyword"
+                        },
+                        "unique-id": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                "execution-log": {
+                    "properties": {
+                        "created-at": {
+                            "type": "date"
+                        },
+                        "modified-at": {
+                            "type": "date"
+                        },
+                        "start-time": {
+                            "type": "date"
+                        },
+                        "parent-surrogate-num": {
+                            "type": "keyword"
+                        },
+                        "unique-id": {
+                            "type": "keyword"
+                        }
+                    }
+                },
+                "execution-list": {
+                    "properties": {
+                        "created-at": {
+                            "type": "date"
+                        },
+                    
+                        "modified-at": {
+                            "type": "date"
+                        },
+                        "parent-surrogate-num": {
+                            "type": "keyword"
+                        },
+                        "project-id": {
+                            "type": "keyword"
+                        },
+                        "properties": {
+                            "properties": {
+                                "name": {
+                                    "type": "keyword",
+                                    "ignore_above": 512
+                                },
+                                "value": {
+                                    "type": "keyword",
+                                    "ignore_above": 512
+                                }
+                            }
+                        },
+                        "unique-id": {
+                            "type": "keyword"
+                        }
+                    }
+                }
+            }
+        },
+        "aliases": {}
+    }
+    
+  # PUT   _template/tosca-healthcheck
+  tosca-healthchecks.json: |
+    {
+        "order": 5,
+        "index_patterns": [
+            "tosca*healthcheck*",
+            "backup-*healthcheck*"
+        ],
+        "settings": {
+            "index": {
+                "number_of_shards": 1,
+                "number_of_replicas": 0,
+                "refresh_interval": "5s"
+            }
+        },
+        "mappings": {
+            "numeric_detection": true,
+            "dynamic": true,
+            "dynamic_templates": [
+                {
+                    "strings": {
+                        "mapping": {
+                            "ignore_above": 512,
+                            "type": "keyword"
+                        },
+                        "match_mapping_type": "string"
+                    }
+                }
+            ],
+            "date_detection": true,
+            "properties": {
+                "description": {
+                    "type": "text"
+                },
+                "name": {
+                    "type": "keyword"
+                },
+                "@timestamp": {
+                    "type": "date"
+                },
+                "start-time": {
+                    "type": "date"
+                },
+                "end-time": {
+                    "type": "date"
+                },
+                "tags": {
+                    "type": "keyword"
+                }
+                
+            }
+        },
+        "aliases": {}
+    }
