@@ -296,3 +296,58 @@ data:
         },
         "aliases": {}
     }
+
+  # PUT _index_template/systeminfo_template
+  tosca-systeminfo.json: |
+    {
+        "order": 10,
+        "index_patterns": [
+            "tosca-system-info*"
+        ],
+        "template": {
+            "settings": {
+                "number_of_shards": 1
+            },
+            "mappings": {
+                "dynamic_templates": [
+                    {
+                        "match_mb": {
+                            "path_match": "*.MB",
+                            "mapping": {
+                                "type": "float"
+                            }
+                        }
+                    },
+                    {
+                        "match_gb": {
+                            "path_match": "*.GB",
+                            "mapping": {
+                                "type": "float"
+                            }
+                        }
+                    },
+                    {
+                        "match_percent": {
+                            "path_match": "*.Percent*",
+                            "mapping": {
+                                "type": "float"
+                            }
+                        }
+                    }
+                ],
+                "properties": {
+                    "timestamp": {
+                        "type": "date"
+                    },
+                    "action": {
+                        "type": "keyword"
+                    },
+                    "script": {
+                        "type": "text"
+                    }
+                }
+            }
+        },
+        "priority": 100,
+        "data_stream": {}
+    }

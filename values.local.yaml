@@ -300,7 +300,7 @@ opensearch:
             cd /usr/share/opensearch/install-files/
             curl -XPUT https://localhost:9200/_template/tosca-template -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-template.json
             curl -XPUT https://localhost:9200/_template/tosca-healthcheck -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-healthchecks.json
-
+            curl -XPUT https://localhost:9200/_template/tosca-healthcheck -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-systeminfo.json
 
 
   extraVolumes:

@@ -40,6 +40,12 @@ data:
           add_field => { "eventtime"=> "%{@timestamp}" }
         }
 
+        if [OperatingSystem] {
+          mutate {
+            update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-system-info" }  
+          }
+        }
+
         ruby {
           code => '
             tags = [] if tags.nil?
@@ -329,8 +335,6 @@ data:
             flattened = flatten_values(event.to_hash, exclude_keys).sort.compact
             concatenated = flattened.join("|")
             object_hash = Digest::SHA256.hexdigest(concatenated)
-
-            event.set("[flattened]", flattened)
 
             event.set("[@metadata][id]", object_hash)
           '
