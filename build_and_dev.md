@@ -71,4 +71,8 @@ https://medium.com/@yago82/secure-communication-setup-ssl-certificates-for-logst
 ```sh
 # Post to https endpoint (full file)
 curl -k -vvv https://devlocal.groundzero.solutions:50000 -X POST -H "Content-Type: application/xml"  --cacert ../../secrets/self-signed-devlocal/ca-cert.pem -H "Tags: nunit,selenium" --data @nunit3-results.xml -u "${SEND_DATA_USER}:${SEND_DATA_PASSWORD}"
+
+
+openssl s_client -showcerts -connect ${QAIENV_HOSTNAME}:50000 -servername ${QAIENV_HOSTNAME} 2>/dev/null | openssl x509 -text
+
 ```
