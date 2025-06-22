@@ -353,6 +353,11 @@ data:
             update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
           }
 
+        } else if [action] == "script" {
+            mutate {
+              remove_field => [ "[@metadata][id]" ]
+            }
+
         } else {
           
           mutate {
