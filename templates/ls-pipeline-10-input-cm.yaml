@@ -8,13 +8,13 @@ data:
       beats {
         port => 5044
 
-        ssl_enabled => false
+        # ssl_enabled => false
 
-        # ssl_enabled => true
+        ssl_enabled => true
         # ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
-        # ssl_certificate => "/usr/share/logstash/certs/tls.crt"
-        # ssl_key => "/usr/share/logstash/certs/tls.key"
-        # ssl_client_authentication => "none"   # Can be: none \ optional \ required
+        ssl_certificate => "/usr/share/logstash/certs/tls.crt"
+        ssl_key => "/usr/share/logstash/certs/tls.key"
+        ssl_client_authentication => "none"   # Can be: none \ optional \ required
       }
     }
     
@@ -353,7 +353,7 @@ data:
             update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
           }
 
-        } else if [action] == "script" {
+        } else if [action] == "script-execute" {
             mutate {
               remove_field => [ "[@metadata][id]" ]
             }

@@ -177,7 +177,19 @@ PUT _template/tosca-template
                     },
                     "unique-id": {
                         "type": "keyword"
-                    }
+                    },
+                    "properties": {
+                        "properties": {
+                            "name": {
+                            "type": "keyword",
+                            "ignore_above": 512
+                            },
+                            "value": {
+                            "type": "keyword",
+                            "ignore_above": 512
+                            }
+                        }
+                    },
                 }
             },
             "execution-log": {
@@ -193,6 +205,18 @@ PUT _template/tosca-template
                     },
                     "parent-surrogate-num": {
                         "type": "keyword"
+                    },
+                    "properties": {
+                        "properties": {
+                            "name": {
+                            "type": "keyword",
+                            "ignore_above": 512
+                            },
+                            "value": {
+                            "type": "keyword",
+                            "ignore_above": 512
+                            }
+                        }
                     },
                     "unique-id": {
                         "type": "keyword"
