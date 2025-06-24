@@ -219,7 +219,7 @@ opensearch:
   singleNode: true
 
   image:
-    tag: "2.19.2"
+    tag: "3.0.0"
 
   resources:
     requests:
@@ -270,8 +270,8 @@ opensearch:
 
       # discovery.type: single-node
 
-      # TODO: Remove for prod\cust installs
-      reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
+      # # TODO: Remove for prod\cust installs
+      # reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
       
       reindex.ssl.verification_mode: none
 
@@ -339,7 +339,9 @@ opensearch-dashboards:
   replicaCount: 1
 
   image:
-    tag: "2.19.1"
+    tag: "3.0.0"
+
+
   # extraEnvs:
   # - name: "DISABLE_SECURITY_PLUGIN"
   #   value: "false"

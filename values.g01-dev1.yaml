@@ -218,7 +218,7 @@ opensearch:
   singleNode: true
 
   image:
-    tag: "2.19.2"
+    tag: "3.0.0"
 
   resources:
     requests:
@@ -269,8 +269,8 @@ opensearch:
 
       # discovery.type: single-node
 
-      # TODO: Remove for prod\cust installs
-      reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
+      # # TODO: Remove for prod\cust installs
+      # reindex.remote.whitelist: ["*.svc.cluster.local:9200", "*:920*"]
       
       reindex.ssl.verification_mode: none
 
@@ -301,14 +301,6 @@ opensearch:
             curl -XPUT https://localhost:9200/_template/tosca-healthcheck -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-healthchecks.json
             curl -XPUT https://localhost:9200/_template/tosca-systeminfo -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data @./tosca-systeminfo.json
 
-            curl -XPUT https://localhost:9200//_snapshot/repo-backups -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -H 'Content-Type: application/json' --insecure --data '
-            {
-              "type": "fs",
-              "settings": {
-                "location": "/usr/share/opensearch/data/snapshots"
-              }
-            }'
-
   extraVolumes:
     - name: install-files
       configMap:
@@ -337,7 +329,7 @@ opensearch-dashboards:
   replicaCount: 1
 
   image:
-    tag: "2.19.1"
+    tag: "3.0.0"
   # extraEnvs:
   # - name: "DISABLE_SECURITY_PLUGIN"
   #   value: "false"
