@@ -8,16 +8,13 @@ data:
       beats {
         port => 5044
 
-        # ssl_enabled => false
-
         ssl_enabled => true
         
         ssl_certificate => "/usr/share/logstash/certs/tls.crt"
         ssl_key => "/usr/share/logstash/certs/tls.key"
 
         ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
-        ssl_client_authentication => "required"
-        
+        ssl_client_authentication => "optional"
       }
     }
     
