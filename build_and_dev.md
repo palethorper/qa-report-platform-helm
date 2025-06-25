@@ -75,4 +75,7 @@ curl -k -vvv https://devlocal.groundzero.solutions:50000 -X POST -H "Content-Typ
 
 openssl s_client -showcerts -connect ${QAIENV_HOSTNAME}:50000 -servername ${QAIENV_HOSTNAME} 2>/dev/null | openssl x509 -text
 
+# https://www.elastic.co/docs/reference/beats/filebeat/configuration-ssl#server-client-renegotiation
+
+
 ```
