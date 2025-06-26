@@ -16,7 +16,26 @@ data:
       
       if [product] =~ "Tosca" {
 
-        if [@metadata][id] {
+        # Workaround: Do not allo-w updates to execution-test-case-log 
+        if [@metadata][id] and [object-type] == "execution-test-case-log" {
+        
+          opensearch {
+            codec => json
+
+            hosts => ["https://opensearch-cluster-master:9200"]
+            index => "%{[@metadata][index_prefix]}%{[@metadata][index_suffix]}"
+
+            user => "admin"
+            password => "${OS_PASSWORD}"
+            ssl => true
+            ssl_certificate_verification => false
+            
+            action => "create"
+
+            document_id => "%{[@metadata][id]}"
+          }
+
+        } else if [@metadata][id] {
         
           opensearch {
             codec => json

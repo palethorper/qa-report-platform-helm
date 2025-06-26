@@ -13,8 +13,8 @@ data:
         ssl_certificate => "/usr/share/logstash/certs/tls.crt"
         ssl_key => "/usr/share/logstash/certs/tls.key"
 
-        ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
-        ssl_client_authentication => "optional"
+        # ssl_certificate_authorities => ["/usr/share/logstash/certs/ca.crt"]
+        ssl_client_authentication => "none"
       }
     }
     
@@ -348,7 +348,7 @@ data:
             update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
           }
 
-        } else if [object-type] =~ /test-case|execution-entry|execution-log|execution-list|test-case-execution-log/ {
+        } else if [object-type] =~ /^(test-case|execution-entry|execution-log|execution-list)$/ { # dISABLE: test-case-execution-log
           mutate {
             update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
           }
