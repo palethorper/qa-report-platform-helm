@@ -229,8 +229,9 @@ data:
             # begin 
 
             r = event.get("[NodePath]")
-            if (r.to_s.scan("/").count > 0 && r !=nil )
-              paths = r.split("/").reject {|s| s.empty? }
+            ptrn = /(?<!\\)\//
+            if (r.to_s.scan(ptrn).count > 0 && r !=nil )
+              paths = r.split(ptrn).reject {|s| s.empty? }
 
               t = paths.delete_if { |component| component.empty? }
               event.set("[ComponentFolders]", t)
@@ -329,14 +330,19 @@ data:
               result
             end
 
-            # Customize keys to exclude from hash input
-            exclude_keys = ["log", "@timestamp", "@version", "eventtime", "agent", "_id", "@metadata", "ecs"]
+            # Customize keys to exclude from hash calculation
+            exclude_keys = ["log", "@timestamp", "@version", "eventtime", "agent", "_id", "@metadata", "ecs", "@metadata", "component-folders", "tags" ]
+
+            # First case object
+            # test-case-execution-log - only calc hash off root level attributes. i.e remove relationships for hashing pupose
+            exclude_keys << [ "test-case", "execution-entry", "execution-list" ] if event.get("[object-type]") == "test-case-execution-log"
 
             flattened = flatten_values(event.to_hash, exclude_keys).sort.compact
             concatenated = flattened.join("|")
             object_hash = Digest::SHA256.hexdigest(concatenated)
 
             event.set("[@metadata][id]", object_hash)
+            event.set("[object-hash]", object_hash)
           '
         }
 
@@ -348,7 +354,7 @@ data:
             update => { "[@metadata][index_prefix]" => "%{[@metadata][index_prefix]}-healthcheck-results" }
           }
 
-        } else if [object-type] =~ /^(test-case|execution-entry|execution-log|execution-list)$/ { # dISABLE: test-case-execution-log
+        } else if [object-type] =~ /^(test-case|execution-entry|execution-log|execution-list)$/ { # Disable for: test-case-execution-log
           mutate {
             update => { "[@metadata][id]" => "%{unique-id}-%{[@metadata][id]}" }
           }
